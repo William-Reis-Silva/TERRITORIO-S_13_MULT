@@ -1,7 +1,7 @@
 :root {
-  --primary: #1e2733;    /* Azul principal */
+  --primary: var(--header-start, #1e2733);    /* Azul principal (vem de tema.css) */
   --secondary: #16427a; /* Azul claro */
-  --accent: #4a535e;     /* cinza */
+  --accent: var(--header-mid, #4a535e);     /* cinza (vem de tema.css) */
 
 
 /* Cores texto */
@@ -142,7 +142,7 @@ img {
 }
 
 .nav-link:hover {
-  color: rgb(245, 6, 6);
+  color: var(--accent-destaque, #ffc107);
 }
 
 /* Estilos do Dropdown */
@@ -170,7 +170,7 @@ img {
 }
 
 .dropdown-menu li a:hover {
-  color: rgb(245, 6, 6);
+  color: var(--accent-destaque, #ffc107);
 }
 
 .nav-item.dropdown .dropdown-menu {

@@ -1,4 +1,4 @@
-const CACHE_NAME = "arranjo-campo-v1.5.1";
+const CACHE_NAME = "arranjo-campo-v1.5.2";
 
 const FILES_TO_CACHE = [
   "./index.html",

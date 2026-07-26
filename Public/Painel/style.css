@@ -9,15 +9,15 @@
 
 :root {
     /* Paleta de Cores Principal */
-    --primary: #1e2733;
+    --primary: var(--header-start, #1e2733);
     --primary-dark: #16427a;
     --secondary: #16427a;
-    --accent: #4a535e;
-    
+    --accent: var(--header-mid, #4a535e);
+
     /* Cores de Status */
     --success: #28a745;
     --danger: #dc3545;
-    --warning: #ffc107;
+    --warning: var(--accent-destaque, #ffc107);
     --info: #17a2b8;
     
     /* Cores Neutras */

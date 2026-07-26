@@ -12,6 +12,14 @@
     --cor7: #ff8811;
     --cor8: #dae8eb;
     --cor9: #d6e7da;
+
+    /* Paleta do cabeçalho/rodapé usada em todo o app (index, Território,
+       Painel, Sequências). Antes copiada em hex cru em 4 arquivos CSS
+       diferentes - agora com uma única fonte de verdade. */
+    --header-start: #1e2733;
+    --header-mid: #4a535e;
+    --header-shadow: #464646;
+    --accent-destaque: #ffc107;
 }
 /*
 :root {
