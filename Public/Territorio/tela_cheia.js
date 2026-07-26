@@ -23,33 +23,34 @@ function openFullscreen(src) {
     botao.style.fontSize = "16px";
 
     botao.onclick = async () => {
+      const url = /^https?:\/\//i.test(src) ? src : window.location.origin + "/" + src;
+      const compartilharLink = () => {
+        window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, "_blank");
+      };
+
       try {
         // Fetch a imagem e convertê-la em blob
         const response = await fetch(src);
+        if (!response.ok) throw new Error(`Falha ao baixar imagem (HTTP ${response.status})`);
         const blob = await response.blob();
 
         // Criar um objeto de arquivo
-        const file = new File([blob], "imagem.jpg", { type: "image/jpeg" });
+        const file = new File([blob], "imagem.jpg", { type: blob.type || "image/jpeg" });
 
-        // Verificar se o navegador suporta a Web Share API
-        if (navigator.share) {
+        // Só tenta compartilhar arquivo se o navegador realmente suportar esse arquivo
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
             files: [file],
             title: "Compartilhar Imagem",
           });
         } else {
-          // Fallback para o compartilhamento via WhatsApp com link
-          let url = window.location.origin + "/" + src;
-          window.open(
-            `https://wa.me/?text=${encodeURIComponent(url)}`,
-            "_blank"
-          );
+          console.warn("Compartilhamento de arquivo não suportado neste navegador, enviando apenas o link.");
+          compartilharLink();
         }
       } catch (error) {
-        console.error("Erro ao compartilhar:", error);
+        console.error("Erro ao compartilhar imagem (provável bloqueio de CORS no Storage ou share cancelado):", error);
         // Fallback para o compartilhamento via WhatsApp com link
-        let url = window.location.origin + "/" + src;
-        window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, "_blank");
+        compartilharLink();
       }
     };
 

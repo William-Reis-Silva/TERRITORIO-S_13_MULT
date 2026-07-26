@@ -1,0 +1,13 @@
+[
+  {
+    "origin": [
+      "http://localhost:5000",
+      "http://127.0.0.1:5000",
+      "https://territorio-s-13.web.app",
+      "https://territorio-s-13.firebaseapp.com"
+    ],
+    "method": ["GET", "HEAD"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type", "Content-Length", "Content-Disposition"]
+  }
+]

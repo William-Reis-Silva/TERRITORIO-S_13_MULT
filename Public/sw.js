@@ -1,4 +1,4 @@
-const CACHE_NAME = "arranjo-campo-v1.4.3";
+const CACHE_NAME = "arranjo-campo-v1.5.0";
 
 const FILES_TO_CACHE = [
   "./index.html",
@@ -6,7 +6,24 @@ const FILES_TO_CACHE = [
   "./Cadastro.html",
   "./Registro_S13.html",
   "./S_13.html",
+  "./sequencias.html",
   "./manifest.json",
+
+  // CSS
+  "./css/index.css",
+  "./css/Login.css",
+  "./css/Formularios.css",
+  "./css/S_13.css",
+  "./css/editar.css",
+  "./css/mapas.css",
+  "./css/sequencias.css",
+  "./css/tema.css",
+
+  // Ícones
+  "./img/icone-192.png",
+  "./img/icone-512.png",
+  "./img/favicon.ico",
+  "./img/logo.png",
 
   // JS principal
   "./js/index.js",
@@ -17,12 +34,21 @@ const FILES_TO_CACHE = [
   "./js/Registro_S13.js",
   "./js/S_13.js",
   "./js/UnifiedDataManager.js",
+  "./js/CongregacaoUtils.js",
+  "./js/Tenant.js",
+  "./js/script.js",
+  "./js/sequencias.js",
 
   // Painel
   "./Painel/painel.html",
   "./Painel/gerenciamento_escala.html",
   "./Painel/script.js",
   "./Painel/style.css",
+  "./Painel/congregacao_admin.js",
+  "./Painel/escala-generica.js",
+  "./Painel/eventos.js",
+  "./Painel/grupos_admin.js",
+  "./Painel/sequencia_admin.js",
 
   // Território
   "./Territorio/index_territorio.html",
@@ -30,6 +56,8 @@ const FILES_TO_CACHE = [
   "./Territorio/especial.html",
   "./Territorio/imprimir.html",
   "./Territorio/view_progamacao.html",
+  "./Territorio/CSS/style.css",
+  "./Territorio/CSS/view_progamacao.css",
   "./Territorio/Index.js",
   "./Territorio/Prog_campo.js",
   "./Territorio/tela_cheia.js",
