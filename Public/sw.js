@@ -1,4 +1,4 @@
-const CACHE_NAME = "arranjo-campo-v1.5.0";
+const CACHE_NAME = "arranjo-campo-v1.5.1";
 
 const FILES_TO_CACHE = [
   "./index.html",
@@ -18,6 +18,7 @@ const FILES_TO_CACHE = [
   "./css/mapas.css",
   "./css/sequencias.css",
   "./css/tema.css",
+  "./css/navigation.css",
 
   // Ícones
   "./img/icone-192.png",
