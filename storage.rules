@@ -1,0 +1,51 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    /* =====================================================
+       🔹 FUNÇÕES AUXILIARES
+       Espelham firestore.rules — consultam o mesmo doc
+       usuarios/{uid} via firestore.get()/firestore.exists()
+       (cross-service rules), já que Storage não tem acesso
+       nativo aos dados do Firestore.
+    ====================================================== */
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function usuarioDoc() {
+      return firestore.get(/databases/(default)/documents/usuarios/$(request.auth.uid));
+    }
+
+    function pertenceACongregacao(congId) {
+      return isAuthenticated()
+        && firestore.exists(/databases/(default)/documents/usuarios/$(request.auth.uid))
+        && usuarioDoc().data.congregacaoId == congId;
+    }
+
+    function podeEscreverNaCongregacao(congId) {
+      return pertenceACongregacao(congId)
+        && usuarioDoc().data.writtenPermission == true;
+    }
+
+    /* =====================================================
+       🔹 MAPAS DE TERRITÓRIO
+       congregacoes/{congId}/mapas/{fileName}
+       (usado em Painel/script.js -> storage.ref)
+    ====================================================== */
+    match /congregacoes/{congId}/mapas/{fileName} {
+      allow read: if pertenceACongregacao(congId);
+
+      allow create, update: if podeEscreverNaCongregacao(congId)
+        && request.resource.size < 2097152 // 2 MB — espelha MAX_MAPA_FOTO_BYTES em Painel/script.js
+        && request.resource.contentType.matches('image/.*');
+
+      allow delete: if podeEscreverNaCongregacao(congId);
+    }
+
+    // Nega tudo que não casar com uma regra explícita acima.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

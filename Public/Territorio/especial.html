@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="msapplication-tap-highlight" content="no" />
+  <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="stylesheet" href="CSS/style.css" />
+  <link rel="stylesheet" href="../css/tema.css" />
+  <link rel="shortcut icon" href="../img/icone-192.png" type="image/x-icon">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="../js/Firebaseconfig.js"></script>
+  <script src="../js/CongregacaoUtils.js"></script>
+  <script src="../js/Tenant.js"></script>
+  <title>Programação especial</title>
+</head>
+
+<body>
+  <div class="wrapper-conteudo">
+    <header>
+      <nav class="nav-bar">
+        <div id="logo">
+          <img src="../img/icone-32x32.png" alt="logo" />
+        </div>
+        <div class="nav-list">
+          <ul>
+            <li class="nav-item"><a href="../index.html" class="nav-link">Home</a></li>
+            </li>
+            <li class="nav-item dropdown">
+              <a href="#" class="nav-link">Mapas</a>
+              <ul class="dropdown-menu">
+                <li><a href="javascript:void(0);" onclick="showSection('alto-serenata')">Alto Serenata</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('alto-timirim')">Alto Timirim</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('coqueiro')">Coqueiro</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('corrego-do-cacador')">Córrego do Caçador</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('eldorado')">Eldorado</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('jardim-primavera')">Jardim Primavera</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('joao-xxiii')">João XXIII</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('john-kennedy')">John Kennedy</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('novo-horizonte')">Novo Horizonte</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('olaria')">Olaria</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('primavera')">Primavera</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('quitandinha')">Quitandinha</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('santa-maria')">Santa Maria</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('serenata')">Serenata</a></li>
+                <li><a href="javascript:void(0);" onclick="showSection('timirim')">Timirim</a></li>
+              </ul>
+            </li>
+            <li class="nav-item">
+              <a href="tabela.html" id="admin" class="nav-link" style="display:none">Prog.Campo</a>
+            </li>
+            <li class="nav-item"><a href="index_territorio.html" class="nav-link">Voltar</a></li>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    </header>
+</div>
+    <main>
+<div class="tabela">
+      <div id="home" class="section" style="display:block;">
+        <table id="tabela-atividades">
+          <caption id="title">Programação de Campo<br>
+          <spn id="semana-atual" style="font-weight: bold; text-align: center;"></spn></caption>
+
+          <thead>
+            <tr>
+              <th>Dia</th>
+              <th>Modalidade</th>
+              <th>Hora</th>
+              <th>Dirigente</th>
+              <th>Saída</th>
+            </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <tb>
+              <td>Terça</td>
+              <td>Casa em casa</td>
+              <td>08:45</td>
+              <td>Joebel</td>
+              <td>Salão Timirim</td>
+            </tb>
+          </tr>
+
+          <tr>
+            <tb>
+              <td>Quarta</td>
+              <td>Casa em casa</td>
+              <td>08:45</td>
+              <td>Thalles</td>
+              <td>Salão Timirim</td>
+            </tb>
+          </tr>
+
+          <tr>
+            <tb>
+              <td>Quinta</td>
+              <td>Carrinho na feira</td>
+              <td>07:30</td>
+              <td>Lidinei</td>
+              <td>Feira Timirim</td>
+            </tb>
+          </tr>
+
+          <tr>
+            <tb>
+              <td>Sexta</td>
+              <td>Casa em casa</td>
+              <td>08:45</td>
+              <td>Joebel</td>
+              <td>Salão Timirim</td>
+            </tb>
+          </tr>
+          <tr>
+            <tb>
+              <td>Sábado</td>
+              <td>Casa em casa</td>
+              <td>09:00</td>
+              <td id="sabado"></td>
+              <td>Salão Timirim</td>
+            </tb>
+          </tr>
+          <tr>
+            <tb>
+              <td>Domingo</td>
+              <td>Carrinho na Feira</td>
+              <td>07:30</td>
+              <td id="domingo"></td>
+              <td>Feira Timirim</td>
+            </tb>
+          </tr>
+          <tr>
+            <td>Domingo</td>
+            <td>Casa em casa</td>
+            <td contenteditable="true">09:00</td>
+            <td contenteditable="true">Lidinei</td>
+            <td>Salão Timirim</td>
+          </tr>
+          </tbody>
+        </table>
+        </div>
+        <div id="home-idoso" class="section" style="display:block;">
+        <table id="tabela-idoso">
+          <caption class="idosos">Trabalho especial com os idosos</caption>
+          <thead>
+            <tr>
+              <th class="idoso">Dia</th>
+              <th class="idoso">Idoso</th>
+              <th class="idoso">Dirigente</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Sábado</td>
+              <td  id="idoso"></td>
+              <td  id="acompanhate"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>  
+</div>
+      <div id="mapas">
+        <div id="joao-xxiii" class="section" style="display:none;">
+          <h1>João XXIII</h1>
+          <div class="conteudo">
+            <img src="../img/mapas/JoãoXIII.jpg" alt="João XXIII" onclick="openFullscreen(this.src)" />
+            <img src="../img/mapas/mapa_24.jpg" alt="João XXIII" onclick="openFullscreen(this.src)" />
+            <img src="../img/mapas/mapa_25.jpg" alt="João XXIII" onclick="openFullscreen(this.src)" />
+          </div>
+        </div>
+      <div id="corrego-do-cacador" class="section" style="display:none;">
+        <h1>Córrego do Caçador</h1>
+        <div class="conteudo">
+          <img src="../img/mapas/mapa_26.jpg" alt="Córrego do Caçador"
+            onclick="openFullscreen(this.src)" />
+          <img src="../img/mapas/mapa_27.jpg" alt="Córrego do Caçador"
+            onclick="openFullscreen(this.src)" />
+        </div>
+      </div>
+      <div id="olaria" class="section" style="display:none;">
+        <h1>Olaria</h1>
+        <div class="conteudo">
+          <img src="../img/mapas/mapa_8.jpg" alt="Olaria Mapa 8" onclick="openFullscreen(this.src)" />
+
+          <img src="../img/mapas/mapa_9.jpg" alt="Olaria Mapa 9" onclick="openFullscreen(this.src)" />
+
+          <img src="../img/mapas/mapa_10.jpg" alt="Olaria Mapa 10" onclick="openFullscreen(this.src)" />
+
+          <img src="../img/mapas/mapa_11.jpg" alt="Olaria Mapa 11" onclick="openFullscreen(this.src)" />
+        </div>
+      </div>
+      <div id="john-kennedy" class="section" style="display:none;">
+        <h1>John Kennedy</h1>
+        <div class="conteudo">
+          <img src="../img/mapas/mapa_13.jpg" alt="John Kennedy Mapa13"
+            onclick="openFullscreen(this.src)" />
+        </div>
+      </div>
+      <div id="novo-horizonte" class="section" style="display:none;">
+        <h1>Novo Horizonte</h1>
+        <div class="conteudo">
+          <img src="../img/mapas/novo_horizonte.jpg" alt="Novo Horizonte" onclick="openFullscreen(this.src)" />
+          <img src="../img/mapas/mapa_28.jpg" alt="Novo Horizonte"
+            onclick="openFullscreen(this.src)" />
+          <img src="../img/mapas/mapa_29.jpg" alt="Novo Horizonte"
+            onclick="openFullscreen(this.src)" />
+          <img src="../img/mapas/mapa_30.jpg" alt="Novo Horizonte"
+            onclick="openFullscreen(this.src)" />
+          <img src="../img/mapas/mapa_31.jpg" alt="Novo Horizonte"
+            onclick="openFullscreen(this.src)" />
+        </div>
+      </div>
+      <div id="serenata" class="section" style="display:none;">
+        <h1>Serenata</h1>
+        <div class="conteudo">
+          <img src="../img/mapas/mapa_32.jpg" alt="Serenata" onclick="openFullscreen(this.src)" />
+        </div>
+      </div>
+      <div id="coqueiro" class="section" style="display:none;">
+        <h1>Coqueiro</h1>
+        <div class="conteudo">
+          <img src="../img/mapas/mapa_12.jpg" alt="Coqueiro" onclick="openFullscreen(this.src)" />
+        </div>
+      </div>
+      <div id="alto-timirim" class="section" style="display:none;">
+        <h1>Alto Timirim</h1>
+        <div class="conteudo">
+          <img src="../img/mapas/mapa_1.jpg" alt="Alto Timirim" onclick="openFullscreen(this.src)" />
+          <img src="../img/mapas/mapa_2.jpg" alt="Alto Timirim" onclick="openFullscreen(this.src)" />
+        </div>
+      </div>
+      <div id="timirim" class="section" style="display:none;">
+        <h1>Timirim</h1>
+        <div class="conteudo">
+          <img src="../img/mapas/mapa_3.jpg" alt="mapa 3" onclick="openFullscreen(this.src)" />
+
+          <img src="../img/mapas/mapa_4.jpg" alt="mapa 4" onclick="openFullscreen(this.src)" />
+
+          <img src="../img/mapas/mapa_5.jpg" alt="mapa 5" onclick="openFullscreen(this.src)" />
+
+          <img src="../img/mapas/mapa_6.jpg" alt="mapa 6" onclick="openFullscreen(this.src)" />
+
+          <img src="../img/mapas/Timirim.jpg" alt="mapa completo" onclick="openFullscreen(this.src)" />
+        </div>
+      </div>
+      <div id="eldorado" class="section" style="display:none;">
+        <h1>Eldorado</h1>
+        <div class="conteudo">
+          <img src="../img/mapas/mapa_39.jpg" alt="Eldorado" onclick="openFullscreen(this.src)" />
+          <img src="../img/mapas/mapa_40.jpg" alt="Eldorado" onclick="openFullscreen(this.src)" />
+          <img src="../img/mapas/mapa_41.jpg" alt="Eldorado" onclick="openFullscreen(this.src)" />
+        </div>
+      </div>
+       <div id="quitandinha" class="section" style="display:none;">
+          <h1>Quitandinha</h1>
+          <div class="conteudo">
+            <img src="../img/mapas/mapa_34.jpg" alt="Quitandinha" onclick="openFullscreen(this.src)" />
+            <img src="../img/mapas/mapa_35.jpg" alt="Quitandinha" onclick="openFullscreen(this.src)" />
+            <img src="../img/mapas/mapa_36.jpg" alt="Quitandinha" onclick="openFullscreen(this.src)" />
+            <img src="../img/mapas/mapa_37.jpg" alt="Quitandinha" onclick="openFullscreen(this.src)" />
+            <img src="../img/mapas/mapa_38.jpg" alt="Quitandinha" onclick="openFullscreen(this.src)" />
+            <img src="../img/mapas/quitandinha.jpg" alt="Quitandinha" onclick="openFullscreen(this.src)" />
+          </div>
+        </div>
+        <div id="primavera" class="section" style="display:none;">
+          <h1>Primavera</h1>
+          <div class="conteudo">
+            <img src="../img/mapas/mapa_18.jpg" alt="Primavera" onclick="openFullscreen(this.src)" />
+            <img src="../img/mapas/mapa_19.jpg" alt="Primavera" onclick="openFullscreen(this.src)" />
+            <img src="../img/mapas/mapa_20.jpg" alt="Primavera" onclick="openFullscreen(this.src)" />
+            <img src="../img/mapas/mapa_21.jpg" alt="Primavera" onclick="openFullscreen(this.src)" />
+            <img src="../img/mapas/mapa_22.jpg" alt="Primavera" onclick="openFullscreen(this.src)" />
+          </div>
+        </div>
+        <div id="jardim-primavera" class="section" style="display:none;">
+          <h1>Jardim Primavera</h1>
+          <div class="conteudo">
+            <img src="../img/mapas/mapa_23.jpg" alt="Jardim Primavera"
+              onclick="openFullscreen(this.src)" />
+          </div>
+        </div>
+      <div id="santa-maria" class="section" style="display:none;">
+        <h1>Santa Maria</h1>
+        <div class="conteudo">
+          <img src="../img/mapas/mapa_14.jpg" alt="Santa Maria" onclick="openFullscreen(this.src)" />
+          <img src="../img/mapas/mapa_15.jpg" alt="Santa Maria" onclick="openFullscreen(this.src)" />
+          <img src="../img/mapas/mapa_16.jpg" alt="Santa Maria" onclick="openFullscreen(this.src)" />
+          <img src="../img/mapas/mapa_17.jpg" alt="Santa Maria" onclick="openFullscreen(this.src)" />
+        </div>
+      </div>
+      <div id="alto-serenata" class="section" style="display:none;">
+        <h1>Alto Serenata</h1>
+        <div class="conteudo">
+          <img src="../img/mapas/mapa_33.jpg" alt="Alto Serenata" onclick="openFullscreen(this.src)" />
+        </div>
+      </div>
+      </div>
+      <div class="fullscreen" id="fullscreen" onclick="closeFullscreen()">
+        <img id="fullscreen-img" src="" alt="Imagem em tela cheia">
+      </div>
+    </div>
+    </main>
+
+ 
+  <script>
+    function showSection(sectionId) {
+      const sections = document.querySelectorAll('.section');
+      sections.forEach(section => {
+        section.style.display = 'none';
+      });
+      const activeSection = document.getElementById(sectionId);
+      if (activeSection) {
+        activeSection.style.display = 'block';
+      }
+    }
+    document.querySelectorAll('.dropdown').forEach(dropdown => {
+      dropdown.addEventListener('click', function (e) {
+        e.preventDefault();
+        const submenu = this.querySelector('.dropdown-menu');
+        submenu.classList.toggle('show');
+      });
+    });
+  </script>
+  <script src="tela_cheia.js"></script>
+  <script src="Prog_campo.js"></script>
+  <script src="../js/index.js"></script>
+</body>
+
+</html>

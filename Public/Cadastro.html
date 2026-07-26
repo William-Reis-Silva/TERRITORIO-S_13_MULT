@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cadastro</title>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/Login.css" />
+    <link rel="stylesheet" type="text/css" href="css/index.css" />
+    <script src="js/Firebaseconfig.js"></script>
+    <script src="js/CongregacaoUtils.js"></script>
+  </head>
+
+  <body>
+    <div class="container">
+      <form id="cadastro-form">
+        <h1>Cadastro de Usuário</h1>
+
+        <input type="text" id="usuario-nome" name="usuario-nome" placeholder="Nome de usuário" required />
+        <input type="email" id="email" name="email" placeholder="Email" required />
+        <input type="password" id="senha" name="senha" placeholder="Senha" required />
+        <input type="password" id="confirmarSenha" name="confirmarSenha" placeholder="Confirmar Senha" required />
+
+        <fieldset style="margin: 16px 0; border: 1px solid #ccc; border-radius: 6px; padding: 10px;">
+          <legend>Congregação</legend>
+          <label>
+            <input type="radio" name="modo-congregacao" value="criar" checked />
+            Criar uma nova congregação
+          </label>
+          <label style="margin-left: 12px;">
+            <input type="radio" name="modo-congregacao" value="convite" />
+            Entrar com código de convite
+          </label>
+
+          <div id="campos-criar-congregacao" style="margin-top: 10px;">
+            <input type="text" id="nome-congregacao" placeholder="Nome da congregação (ex: Timirim)" />
+            <input type="text" id="numero-congregacao" placeholder="Número da congregação (ex: 48991)" />
+          </div>
+
+          <div id="campos-convite" style="margin-top: 10px; display: none;">
+            <input type="text" id="codigo-convite" placeholder="Código de convite" />
+          </div>
+        </fieldset>
+
+        <div id="mensagem-erro"></div>
+        <div id="mensagem-sucesso"></div>
+
+        <br />
+        <button type="submit">Cadastrar</button>
+      </form>
+    </div>
+    <script src="js/Cadastro.js"></script>
+
+    <style>
+      p {
+        font-size: 20px;
+        color: blue;
+      }
+    </style>
+  </body>
+</html>

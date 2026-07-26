@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/Formularios.css" />
+    <title>Registro_S13</title>
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  </head>
+
+  <body>
+    <h1 class="titulo">Registro_S_13</h1>
+
+    <form id="Registro">
+      <p>Olá, <span id="user-greeting">Carregando...</span>!</p>
+      <div id="box">
+        <div class="topo-box">
+          <img id="icone" src="img/logo.png" alt="Ícone" />
+        </div>
+
+        <div class="form-group">
+          <label for="numero_mapa">Número do Mapa:</label>
+          <input type="number" id="numero_mapa" name="numero_mapa" required min="1" />
+        </div>
+
+        <div class="form-group">
+          <label for="bairro">Bairro:</label>
+          <input type="text" id="bairro" name="bairro" readonly placeholder="Será preenchido automaticamente" />
+        </div>
+        <div class="form-group">
+          <label for="mapa-preview" style="display: none">Mapa do Território</label>
+          <div class="mapa-container">
+            <div id="mapa-loading" class="mapa-loading" style="display: none"></div>
+            <img
+              id="mapa-preview"
+              src=""
+              alt="Selecione um número de mapa para visualizar"
+              style="
+                display: none;
+                max-width: 100%;
+                max-height: 400px;
+                border: 2px solid #ddd;
+                border-radius: 8px;
+                margin-top: 10px;
+                object-fit: contain;
+              " />
+            <div id="mapa-error" class="mapa-error" style="display: none">
+              Não foi possível carregar a imagem do mapa.
+            </div>
+
+            <div
+              id="mapa-no-image"
+              style="display: none; color: #6c757d; font-style: italic; padding: 10px; margin-top: 10px">
+              Nenhuma imagem disponível para este território.
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="designado_para">Designado Para:</label>
+          <select id="designado_para" required></select>
+        </div>
+
+        <!-- Aviso de bairro travado a outro grupo -->
+        <div id="grupo-trava-alerta" style="display:none; margin: 10px 0; padding: 12px; border-radius: 6px; background: #fff3e0; border: 1px solid #ffcc80; color: #7a4a00; font-size: 0.9rem;">
+          <p id="grupo-trava-mensagem" style="margin: 0 0 8px 0;"></p>
+          <label id="grupo-trava-forcar-label" style="display:none; align-items:center; gap:6px; font-weight: 600; cursor: pointer;">
+            <input type="checkbox" id="grupo-trava-forcar" />
+            Forçar registro mesmo assim (admin)
+          </label>
+        </div>
+
+        <!-- Painel de Sugestão de Sequência -->
+        <div id="sugestao-panel" class="sugestao-panel" style="display:none;">
+          <div class="sugestao-header">
+            <span class="sugestao-icon">🗺️</span>
+            <div class="sugestao-info">
+              <div class="sugestao-titulo">Próximo sugerido na sequência</div>
+              <div class="sugestao-mapa">
+                Mapa <strong id="sugestao-mapa-num">—</strong> · <span id="sugestao-bairro">—</span>
+              </div>
+            </div>
+            <button type="button" id="aplicar-sugestao" class="btn-sugestao">Usar este</button>
+          </div>
+          <div class="sugestao-historico">
+            <span class="sugestao-historico-label">Histórico recente:</span>
+            <div id="sugestao-chips" class="sugestao-chips"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="data_inicio">Data de Início:</label>
+          <input type="date" id="data_inicio" name="data_inicio" required />
+        </div>
+
+        <div class="form-group">
+          <label for="data_conclusao">Data de Conclusão:</label>
+          <input type="date" id="data_conclusao" name="data_conclusao" />
+        </div>
+
+        <div class="button-group">
+          <button id="Salvar" type="submit" class="btn btn-primary"><span>💾</span> Salvar</button>
+          <button onclick="voltar()" id="Voltar" type="button" class="btn btn-secondary">Voltar</button>
+        </div>
+      </div>
+    </form>
+
+    <!-- Dialog Modal -->
+    <div id="dialog" class="dialog-overlay" style="display: none">
+      <div class="dialog-content">
+        <span class="close-dialog" id="close-dialog">&times;</span>
+        <p id="dialog-message" class="dialog-message"></p>
+      </div>
+    </div>
+    <script>
+      function voltar() {
+        window.location.href = "index.html";
+      }
+    </script>
+    <script src="js/Firebaseconfig.js"></script>
+    <script src="js/CongregacaoUtils.js"></script>
+    <script type="module" src="js/Registro_S13.js"></script>
+  </body>
+</html>

@@ -1,0 +1,102 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0, 0, 0);
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+/* Estilo para o conteúdo do modal */
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+
+}
+
+/* Estilo para o botão de fechar */
+.close {
+    color: #fa0000;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Estilo para o formulário */
+#formEdicao label {
+    display: block;
+    margin: 10px 0 5px;
+    font-weight: bold;
+}
+
+#formEdicao input[type="text"],
+#formEdicao input[type="date"] {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+    text-align: center;
+    font-size: 14px;
+    color: blue;
+    font-weight: bold;
+
+}
+
+#formEdicao button {
+    padding: 10px 20px;
+    margin: 10px 5px 0 0;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background: linear-gradient(to right, #1E2733, #4A535E, #1E2733);
+    color: white;
+    font-size: 16px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+#formEdicao button:hover {
+background: linear-gradient(to right, #4A535E,#1E2733, #4A535E);
+    transform: translateY(-2px);
+    /* Move o botão para cima */
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    /* Aumenta a sombra para dar a sensação de profundidade */
+}
+
+#formEdicao button:nth-child(2) {
+    background-color: #f44336;
+    /* Cor do botão Excluir */
+}
+
+#formEdicao button:nth-child(3) {
+    background-color: #aaa;
+    /* Cor do botão Cancelar */
+}
+
+h2 {
+    color: #4CAF50;
+}

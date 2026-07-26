@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Imprimir Programação</title>
+
+        <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+        <script src="../js/Firebaseconfig.js"></script>
+        <script src="../js/CongregacaoUtils.js"></script>
+        <script src="../js/Tenant.js"></script>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: 'Arial', sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                padding: 20px;
+            }
+
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+
+            .controls-screen {
+                background: white;
+                padding: 30px;
+                border-radius: 15px;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+                margin-bottom: 20px;
+            }
+
+            .controls-screen h1 {
+                color: #667eea;
+                margin-bottom: 25px;
+                font-size: 2em;
+            }
+
+            .form-group {
+                display: flex;
+                gap: 15px;
+                align-items: center;
+                flex-wrap: wrap;
+                margin-bottom: 20px;
+            }
+
+            .form-group label {
+                font-weight: 600;
+                color: #374151;
+            }
+
+            .form-group select,
+            .form-group input {
+                padding: 10px 15px;
+                border: 2px solid #e5e7eb;
+                border-radius: 8px;
+                font-size: 16px;
+                min-width: 150px;
+            }
+
+            .form-group select:focus,
+            .form-group input:focus {
+                outline: none;
+                border-color: #667eea;
+            }
+
+            .btn {
+                padding: 12px 30px;
+                border: none;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+
+            .btn-primary {
+                background: linear-gradient(135deg, #667eea, #764ba2);
+                color: white;
+            }
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            }
+
+            .btn-print {
+                background: linear-gradient(135deg, #10b981, #059669);
+                color: white;
+            }
+
+            .btn-print:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
+            }
+
+            .loading {
+                text-align: center;
+                padding: 40px;
+                color: white;
+                font-size: 1.2em;
+            }
+
+            .spinner {
+                width: 50px;
+                height: 50px;
+                margin: 20px auto;
+                border: 4px solid rgba(255, 255, 255, 0.3);
+                border-top: 4px solid white;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .print-content {
+                display: none;
+            }
+
+            .preview-container {
+                background: #f3f4f6;
+                padding: 30px;
+                border-radius: 15px;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+                margin-top: 20px;
+                display: none;
+             
+            }
+
+            .preview-container.show {
+                display: block;
+            }
+
+            .preview-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px;
+                padding-bottom: 15px;
+                border-bottom: 2px solid #e5e7eb;
+            }
+
+            .preview-header h2 {
+                color: #667eea;
+                font-size: 1.5em;
+                margin: 0;
+            }
+
+            .preview-actions {
+                display: flex;
+                gap: 10px;
+            }
+
+            .preview-wrapper {
+                display: flex;
+                justify-content: center;
+                padding: 20px;
+            }
+
+            .preview-paper {
+                background: white;
+                border: 1px solid #dbd1d1;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+                margin: 0 auto;
+                width: 210mm;
+                min-height: 297mm;
+                padding: 0;
+                position: relative;
+                transform-origin: top center;
+                overflow: hidden;
+            }
+
+            .preview-badge {
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                background: rgba(102, 126, 234, 0.9);
+                color: white;
+                padding: 6px 16px;
+                border-radius: 20px;
+                font-size: 11px;
+                font-weight: 600;
+                box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+                z-index: 10;
+            }
+
+            @media screen and (max-width: 1024px) {
+                .preview-paper {
+                    transform: scale(0.7);
+                    margin-bottom: -100px;
+                }
+            }
+
+            @media screen and (max-width: 768px) {
+                .preview-paper {
+                    transform: scale(0.5);
+                    margin-bottom: -200px;
+                }
+            }
+
+            .empty-state {
+                text-align: center;
+                padding: 60px 20px;
+                color: white;
+            }
+
+            .empty-state h3 {
+                font-size: 1.5em;
+                margin-bottom: 10px;
+            }
+
+            @media print {
+                @page {
+                    size: A4;
+                    margin: 8mm;
+                }
+
+                * {
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                    color-adjust: exact !important;
+                }
+
+                body {
+                    background: white;
+                    padding: 0;
+                    margin: 0;
+                }
+
+                .controls-screen,
+                .preview-container {
+                    display: none !important;
+                }
+
+                .print-content {
+                    display: block !important;
+                    margin: 0;
+                    padding: 0;
+                }
+
+                .page-break {
+                    page-break-after: avoid;
+                }
+
+                table {
+                    page-break-inside: auto;
+                }
+
+                tr {
+                    page-break-inside: avoid;
+                    page-break-after: auto;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="container">
+            <div class="controls-screen">
+                <h1>🖨️ Imprimir Programação Mensal</h1>
+
+                <div class="form-group">
+                    <label for="modo-impressao">Modo:</label>
+                    <select id="modo-impressao">
+                        <option value="detalhado">Detalhado (1 mês)</option>
+                        <option value="compacto" selected>Compacto (2 meses)</option>
+                    </select>
+
+                    <label for="ano-print">Ano:</label>
+                    <input type="number" id="ano-print" min="2000" max="2100" value="2026">
+
+                    <label for="mes-print">Mês Inicial:</label>
+                    <select id="mes-print">
+                        <option value="0">Janeiro</option>
+                        <option value="1">Fevereiro</option>
+                        <option value="2">Março</option>
+                        <option value="3">Abril</option>
+                        <option value="4">Maio</option>
+                        <option value="5">Junho</option>
+                        <option value="6">Julho</option>
+                        <option value="7">Agosto</option>
+                        <option value="8">Setembro</option>
+                        <option value="9">Outubro</option>
+                        <option value="10">Novembro</option>
+                        <option value="11">Dezembro</option>
+                    </select>
+
+                    <button class="btn btn-primary" onclick="carregarParaImpressao()">
+                        🔍 Carregar
+                    </button>
+
+                    <button class="btn btn-print" onclick="window.print()" id="btn-imprimir" style="display: none;">
+                        🖨️ Imprimir
+                    </button>
+                </div>
+
+                <div id="loading"></div>
+            </div>
+
+            <div class="preview-container" id="preview-container">
+                <div class="preview-header">
+                    <h2>📋 Pré-visualização</h2>
+                    <div class="preview-actions">
+                        <button class="btn btn-primary" onclick="voltarEdicao()">
+                            ← Voltar
+                        </button>
+                        <button class="btn btn-print" onclick="window.print()">
+                            🖨️ Imprimir
+                        </button>
+                    </div>
+                </div>
+                <div class="preview-wrapper">
+                    <div class="preview-paper" id="preview-paper">
+                        <div class="preview-badge">👁️ Pré-visualização</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="print-content" id="print-content"></div>
+        </div>
+
+        <script src="imprimir.js"></script>
+    </body>
+
+</html>

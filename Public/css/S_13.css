@@ -1,0 +1,182 @@
+@page {
+  size: A4;
+  margin: 1cm;
+}
+
+body {
+  width: 21cm;
+  height: 29.7cm;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+  background-color: #ccc;
+  color: #333;
+}
+
+h2 {
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: center;
+  font-size: 14px;
+}
+
+th {
+  background-color: #f2f2f2;
+  color: #333;
+}
+
+tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+tr:hover {
+  background-color: #f1f1f1;
+}
+
+#yearControls {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+#yearControls button {
+  margin: 0 10px;
+  padding: 10px 20px;
+  font-size: 14px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+#yearControls button:hover {
+  background-color:#102c11;
+}
+#yearControls button a {
+  margin: 0 10px;
+  padding: 10px 20px;
+  font-size: 14px;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  text-decoration: none;
+}
+#yearControls button a :hover {
+  background-color: #102c11;
+}
+
+#yearControls span {
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0 10px;
+}
+
+/* ── Navegação de abas ── */
+#tab-nav {
+  text-align: center;
+  margin: 16px 0 12px;
+}
+
+.tab-btn {
+  background: #e0e0e0;
+  color: #333;
+  border: 1px solid #bbb;
+  border-radius: 5px 5px 0 0;
+  padding: 8px 28px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 0 2px;
+  transition: background 0.2s;
+}
+
+.tab-btn:hover { background: #c8e6c9; }
+
+.tab-btn-active {
+  background: #4CAF50;
+  color: #fff;
+  border-color: #4CAF50;
+}
+
+/* ── Por Grupo ── */
+.grupo-section {
+  margin-bottom: 28px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.grupo-title {
+  background: #f2f2f2;
+  margin: 0;
+  padding: 10px 16px;
+  font-size: 15px;
+  border-bottom: 1px solid #ddd;
+  color: #333;
+}
+
+.grupo-count {
+  font-size: 12px;
+  font-weight: 400;
+  color: #777;
+  margin-left: 8px;
+}
+
+.grupo-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  box-shadow: none;
+}
+
+.grupo-table th, .grupo-table td {
+  border: 1px solid #e0e0e0;
+  padding: 9px 12px;
+  font-size: 13px;
+}
+
+.grupo-table th { background: #fafafa; font-weight: 700; }
+
+.grupo-vazio {
+  text-align: center;
+  color: #999;
+  font-style: italic;
+  padding: 18px !important;
+}
+
+.sg-seq {
+  color: #888;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.sg-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sg-concluido { background: #e8f5e9; color: #2e7d32; }
+.sg-andamento { background: #e3f2fd; color: #1565c0; }

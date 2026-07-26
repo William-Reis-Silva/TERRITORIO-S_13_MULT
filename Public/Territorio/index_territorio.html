@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="stylesheet" href="CSS/style.css" />
+    <link rel="stylesheet" href="../css/tema.css" />
+    <link rel="shortcut icon" href="../img/icone-192.png" type="image/x-icon">
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+    <script src="../js/Firebaseconfig.js"></script>
+    <script src="../js/CongregacaoUtils.js"></script>
+    <script src="../js/Tenant.js"></script>
+    <script src="../Painel/escala-generica.js"></script>
+    <script>
+      // O Service Worker só é registrado em Public/index.html; quando ele
+      // detecta uma versão nova de sw.js, ativa em segundo plano
+      // (skipWaiting + clients.claim), mas ESTA aba continua rodando com os
+      // scripts que já tinha carregado até a próxima navegação. Sem isso,
+      // se essa próxima navegação não passar de novo por index.html (onde
+      // fica o confirm() que força reload), esta página podia ficar presa
+      // servindo scripts antigos em cache por mais um ciclo inteiro —
+      // recarrega sozinha, uma única vez, assim que o novo SW assumir.
+      if ('serviceWorker' in navigator) {
+        let jaRecarregou = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (jaRecarregou) return;
+          jaRecarregou = true;
+          window.location.reload();
+        });
+      }
+    </script>
+    <title>Controle de Território</title>
+  </head>
+
+  <body>
+    <div class="wrapper-conteudo">
+      <header>
+        <nav class="nav-bar">
+          <div id="logo">
+            <img src="../img/icone-32x32.png" alt="logo" />
+          </div>
+          <div class="nav-list">
+            <ul>
+              <li class="nav-item"><a href="../index.html" class="nav-link">Home</a></li>
+              </li>
+              <li class="nav-item dropdown">
+                <a href="#" class="nav-link">Mapas</a>
+                <ul class="dropdown-menu" id="mapas-dropdown-menu">
+                  <li><span class="nav-link">Carregando...</span></li>
+                </ul>
+              </li>
+              <li class="nav-item">
+                <a href="view_progamacao.html" class="nav-link">Programação</a>
+              </li>
+
+              <li class="nav-item"><a href="index_territorio.html" class="nav-link">Voltar</a></li>
+              </li>
+            </ul>
+          </div>
+        </nav>
+      </header>
+    </div>
+    <main>
+      <div class="tabela">
+        <div class="section" style="display:block; text-align: center; margin-bottom: 10px;">
+          <button id="semana-anterior">⬅ Semana anterior</button>
+          <button id="semana-proxima">Semana seguinte ➡</button>
+        </div>
+        <div id="home" class="section" style="display:block;">
+          <table id="tabela-atividades">
+            <caption id="title">Programação de Campo<br>
+              <spn id="semana-atual" style="font-weight: bold; text-align: center;"></spn>
+            </caption>
+
+            <thead>
+              <tr>
+                <th>Dia</th>
+                <th>Modalidade</th>
+                <th>Hora</th>
+                <th>Dirigente</th>
+                <th>Saída</th>
+              </tr>
+            </thead>
+            <tbody id="corpo-atividades">
+              <tr>
+                <td>Segunda</td>
+                <td>Cartas</td>
+                <td contenteditable="true">14:30</td>
+                <td contenteditable="true">.</td>
+                <td contenteditable="true">Zoom</td>
+              </tr>
+              <tr>
+                <tb>
+                  <td>Terça</td>
+                  <td>Casa em casa</td>
+                  <td>08:45</td>
+                  <td>Joebel</td>
+                  <td>Salão Timirim</td>
+                </tb>
+              </tr>
+
+              <tr>
+                <tb>
+                  <td>Quarta</td>
+                  <td>Casa em casa</td>
+                  <td>08:45</td>
+                  <td>Thalles</td>
+                  <td>Salão Timirim</td>
+                </tb>
+              </tr>
+
+              <tr>
+                <tb>
+                  <td>Quinta</td>
+                  <td>Carrinho na feira</td>
+                  <td>07:30</td>
+                  <td>Lidinei</td>
+                  <td>Feira Timirim</td>
+                </tb>
+              </tr>
+              <tr>
+                <tb>
+                  <td>Quinta</td>
+                  <td>Carrinho no coreto</td>
+                  <td contenteditable="true">17:00</td>
+                  <td contenteditable="true">.</td>
+                  <td>Coreto</td>
+                </tb>
+              </tr>
+      
+              <tr>
+                <tb>
+                  <td>Sexta</td>
+                  <td>Casa em casa</td>
+                  <td>17:30</td>
+                  <td id="sexta"></td>
+                  <td>Salão Timirim</td>
+                </tb>
+              </tr>
+              <tr>
+                <tb>
+                  <td>Sábado</td>
+                  <td>Casa em casa</td>
+                  <td>09:00</td>
+                  <td id="sabado"></td>
+                  <td>Salão Timirim</td>
+                </tb>
+              </tr>
+              <tr>
+                <tb>
+                  <td>Domingo</td>
+                  <td>Carrinho na Feira</td>
+                  <td>07:30</td>
+                  <td id="domingo"></td>
+                  <td>Feira Timirim</td>
+                </tb>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="home-idoso" class="section" style="display:block;">
+          <table id="tabela-idoso">
+            <caption class="idosos">Trabalho especial com os idosos</caption>
+            <thead>
+              <tr>
+                <th class="idoso">Dia</th>
+                <th class="idoso">Idoso</th>
+                <th class="idoso">Dirigente</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Sábado 09:00</td>
+                <td id="idoso"></td>
+                <td id="acompanhante"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div id="mapas">
+        <p style="text-align:center;padding:20px;">Carregando mapas...</p>
+      </div>
+      <div class="fullscreen" id="fullscreen" onclick="closeFullscreen()">
+        <img id="fullscreen-img" src="" alt="Imagem em tela cheia">
+      </div>
+      </div>
+    </main>
+
+
+    <script>
+      function showSection(sectionId) {
+        const sections = document.querySelectorAll('.section');
+        sections.forEach(section => {
+          section.style.display = 'none';
+        });
+        const activeSection = document.getElementById(sectionId);
+        if (activeSection) {
+          activeSection.style.display = 'block';
+        }
+      }
+      document.querySelectorAll('.dropdown').forEach(dropdown => {
+        dropdown.addEventListener('click', function (e) {
+          e.preventDefault();
+          const submenu = this.querySelector('.dropdown-menu');
+          submenu.classList.toggle('show');
+        });
+      });
+    </script>
+    <script src="Prog_campo.js"></script>
+    <script src="tela_cheia.js"></script>
+    <script src="mapas_territorio.js"></script>
+  </body>
+
+</html>

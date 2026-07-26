@@ -1,0 +1,834 @@
+/* =========================================================
+   RESET & BASE
+========================================================= */
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* Paleta de Cores Principal */
+    --primary: #1e2733;
+    --primary-dark: #16427a;
+    --secondary: #16427a;
+    --accent: #4a535e;
+    
+    /* Cores de Status */
+    --success: #28a745;
+    --danger: #dc3545;
+    --warning: #ffc107;
+    --info: #17a2b8;
+    
+    /* Cores Neutras */
+    --bg: #f5f7fa;
+    --text: #333;
+    --text-light: #6c757d;
+    --text-dark: #212529;
+    --white: #fff;
+    --gray-light: #f8f9fa;
+    --gray: #e9ecef;
+    --gray-dark: #dee2e6;
+    --border: #ddd;
+    
+    /* Sombras */
+    --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.2);
+    
+    /* Border Radius */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 15px;
+    --radius-full: 50%;
+    
+    /* Transições */
+    --transition: all 0.3s ease;
+}
+
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding-bottom: 40px;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* =========================================================
+   HEADER & NAVIGATION
+========================================================= */
+header,
+.header {
+    background: linear-gradient(to right, var(--primary), var(--accent), var(--primary));
+    width: 100%;
+    color: var(--white);
+    padding: 0px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-sm);
+}
+
+header h1,
+.header h1 {
+    font-size: 1.5rem;
+    margin: 0;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 20px;
+}
+
+#user-greeting {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    text-align: right;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.home-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    justify-content: flex-start;
+    color: var(--white);
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+    white-space: nowrap;
+}
+
+.home-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Faixa de abas: rolagem horizontal em vez de empilhar botões enormes,
+   assim o menu continua compacto e navegável com uma mão no celular. */
+nav.tab-nav {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    gap: 2px;
+    padding: 0 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+}
+
+nav.tab-nav::-webkit-scrollbar {
+    height: 5px;
+}
+
+nav.tab-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: var(--radius-full);
+}
+
+/* Abas retangulares com indicador inferior — em vez do formato de
+   pílula/balão anterior, que lembrava chips soltos e não uma navegação. */
+.tab-btn {
+    flex: 0 0 auto;
+    padding: 10px 16px;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    white-space: nowrap;
+    background: transparent;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    transition: var(--transition);
+}
+
+.tab-btn:hover {
+    color: var(--white);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.tab-btn.active {
+    color: var(--white);
+    background: rgba(255, 255, 255, 0.12);
+    border-bottom-color: var(--warning);
+}
+
+.tab-btn-link {
+    margin-left: 8px;
+    margin-bottom: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: var(--radius-sm);
+}
+
+/* =========================================================
+   LAYOUT CONTAINERS
+========================================================= */
+main {
+    width: 100%;
+    margin: auto;
+    padding: 2rem 1rem;
+}
+.container {
+max-width: 900px;
+margin: 0 auto;
+
+}
+
+.section,
+.status-card {
+    background: var(--white);
+    padding: 25px;
+    border-radius: var(--radius-lg);
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--gray);
+}
+
+.section-title {
+    font-size: 1.4em;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* =========================================================
+   STATUS CARDS & GRID
+========================================================= */
+.status-card h2 {
+    color: var(--primary);
+    margin-bottom: 15px;
+    font-size: 1.3em;
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.status-item {
+    background: var(--gray-light);
+    padding: 15px;
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--primary);
+}
+
+.status-label {
+    font-size: 0.85em;
+    color: var(--text-light);
+    margin-bottom: 5px;
+}
+
+.status-value {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+/* =========================================================
+   TABS
+========================================================= */
+.tab {
+    display: none;
+}
+
+.tab.active {
+    display: block;
+    animation: fadeIn 0.4s ease;
+}
+
+/* =========================================================
+   FORMULÁRIOS
+========================================================= */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label,
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.form-group input,
+input,
+select {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--gray-dark);
+    transition: var(--transition);
+}
+
+/* Checkbox/radio não devem herdar o width:100% acima — isso os estica e
+   cria um espaço enorme entre a caixinha visível e o texto do label. */
+input[type="checkbox"],
+input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    padding: 0;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+input:focus,
+select:focus,
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.add-form {
+    background: #e7f3ff;
+    padding: 20px;
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+    display: none;
+}
+
+.add-form.active {
+    display: block;
+    animation: fadeIn 0.4s ease;
+}
+
+/* =========================================================
+   BOTÕES
+========================================================= */
+.btn,
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: linear-gradient(to right, var(--primary), var(--accent));
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-success,
+form button {
+    background: var(--success);
+    color: var(--white);
+}
+
+.btn-success:hover,
+form button:hover {
+    filter: brightness(0.9);
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: var(--white);
+}
+
+.btn-danger:hover {
+    filter: brightness(0.9);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: var(--white);
+}
+
+.btn-secondary:hover {
+    filter: brightness(0.9);
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.85em;
+}
+
+/* =========================================================
+   LISTAS E ITEMS
+========================================================= */
+.list-item {
+    background: var(--gray-light);
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: var(--radius-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.list-item:hover {
+    background: var(--gray);
+    transform: translateX(5px);
+}
+
+.list-item-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.list-item-order {
+    background: var(--primary);
+    color: var(--white);
+    width: 35px;
+    height: 35px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.list-item-name {
+    font-size: 1.1em;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.list-item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* =========================================================
+   TABELAS
+========================================================= */
+table,
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+th,
+td {
+    border: 1px solid var(--border);
+    padding: 8px;
+    text-align: center;
+}
+
+th {
+    background: var(--gray-light);
+    font-weight: 600;
+}
+
+.month-header {
+    background: var(--success);
+    color: var(--white);
+}
+
+/* =========================================================
+   BADGES & STATUS
+========================================================= */
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8em;
+    font-weight: 600;
+}
+
+.badge-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.badge-inactive {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* =========================================================
+   UPLOAD & PROGRESSO
+========================================================= */
+.upload-preview-container {
+    margin-top: 10px;
+    padding: 15px;
+    border: 2px dashed var(--primary);
+    border-radius: var(--radius-md);
+    background: linear-gradient(45deg, var(--gray-light), var(--gray));
+    text-align: center;
+    animation: fadeIn 0.4s ease;
+}
+
+.progress-bar {
+    height: 20px;
+    background: var(--gray);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, var(--success), #20c997);
+    transition: width 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-fill.error {
+    background: var(--danger);
+}
+
+.progress-shine {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+    animation: shine 1.4s ease-in-out infinite;
+}
+
+@keyframes shine {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(100%); }
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 4px;
+    color: var(--text-dark);
+}
+
+.file-icon {
+    font-size: 1.2em;
+}
+
+.file-size {
+    font-size: 0.85em;
+    color: var(--text-light);
+    margin-bottom: 10px;
+}
+
+.upload-status {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.upload-status.success { color: #155724; }
+.upload-status.error { color: var(--danger); }
+
+/* Reskin do botão nativo do <input type="file">, sem precisar esconder o
+   input real — mantém o comportamento nativo (acessibilidade, teclado)
+   intacto, só troca a aparência para bater com o resto do design system. */
+input[type="file"] {
+    width: auto;
+    padding: 8px 4px;
+    border: none;
+    cursor: pointer;
+}
+
+input[type="file"]::file-selector-button {
+    padding: 10px 18px;
+    margin-right: 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(to right, var(--primary), var(--accent));
+    color: var(--white);
+    font-weight: 600;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+input[type="file"]::file-selector-button:hover {
+    filter: brightness(1.1);
+}
+
+.image-preview-container {
+    margin-top: 12px;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    background: var(--gray-light);
+    border: 1px solid var(--gray-dark);
+    text-align: center;
+    animation: fadeIn 0.4s ease;
+}
+
+.image-preview-success {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #155724;
+    margin-bottom: 12px;
+}
+
+.success-icon {
+    font-size: 1.1em;
+}
+
+.success-text {
+    font-size: 0.95em;
+}
+
+.image-preview {
+    margin-bottom: 10px;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 260px;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.image-preview-info {
+    font-size: 0.85em;
+    color: var(--text-light);
+    line-height: 1.6;
+}
+
+/* =========================================================
+   MENSAGENS & ESTADOS
+========================================================= */
+.result-success {
+    background: var(--success);
+    color: var(--white);
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    text-align: center;
+}
+
+.result-error {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+}
+
+.result-warning {
+    color: var(--warning);
+}
+
+.result-loading {
+    color: var(--info);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-light);
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: var(--primary);
+}
+
+/* =========================================================
+   IFRAME
+========================================================= */
+#gerador-escala {
+    width: 100%;
+    height: 90vh;
+    border: none;
+    border-radius: var(--radius-md);
+}
+
+/* =========================================================
+   ANIMAÇÕES
+========================================================= */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================================================
+   ACESSIBILIDADE: FOCO, TOQUE, MOVIMENTO
+========================================================= */
+a:focus-visible,
+button:focus-visible,
+.btn:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+    outline: 3px solid var(--info);
+    outline-offset: 2px;
+}
+
+button,
+.btn {
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .btn-sm {
+        min-height: 40px;
+        padding: 8px 14px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* =========================================================
+   RESPONSIVO
+========================================================= */
+@media (max-width: 768px) {
+    body {
+        padding: 0 0 10px;
+    }
+
+    header,
+    .header {
+        padding: 0;
+    }
+
+    .header-top {
+        padding: 10px 14px;
+    }
+
+    header h1,
+    .header h1 {
+        font-size: 1.05rem;
+    }
+
+    #user-greeting {
+        font-size: 0.75rem;
+    }
+
+    .home-link-label {
+        display: none;
+    }
+
+    .home-link {
+        flex: 0 0 auto;
+        padding: 8px;
+    }
+
+    nav.tab-nav {
+        justify-content: flex-start;
+        padding: 0 10px;
+    }
+
+    .tab-btn {
+        font-size: 0.8rem;
+        padding: 8px 13px;
+    }
+
+    .section,
+    .status-card {
+        padding: 15px;
+    }
+
+    .status-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+    }
+
+}
+
+@media (max-width: 480px) {
+    .list-item {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+
+    .list-item-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    table {
+        font-size: 0.85em;
+    }
+
+    th,
+    td {
+        padding: 5px;
+    }
+  
+}

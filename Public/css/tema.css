@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Croissant+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap');
+
+:root {
+    --cor1: #005c4d;
+    --cor2: #00997b;
+    --cor3: #72bfc3;
+    --cor4: #ffffff;
+    --cor5: #00c9c1;
+    --cor6: #190b28;
+    --cor7: #ff8811;
+    --cor8: #dae8eb;
+    --cor9: #d6e7da;
+}
+/*
+:root {
+    --cor1: #003366;
+    --cor2: #005c99;
+    --cor3: #6699cc;
+    --cor4: #ffffff;
+    --cor5: #99ccff;
+    --cor6: #002244;
+    --cor7: #ffcc00;
+    --cor8: #e6f2ff;
+    --cor9: #dcf2ff;
+}
+
+:root {
+    --cor1: #121212;
+    --cor2: #1e1e1e;
+    --cor3: #333333;
+    --cor4: #ffffff;
+    --cor5: #81718d;
+    --cor6: #007d5c;
+    --cor7: #912C2C;
+    --cor8: #c0c0c0;
+    --cor9: #8b8b8b;
+}
+    */

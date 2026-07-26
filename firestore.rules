@@ -1,0 +1,180 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* =====================================================
+       🔹 FUNÇÕES AUXILIARES
+    ====================================================== */
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function congregacaoDoUsuario() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.congregacaoId;
+    }
+
+    function pertenceACongregacao(congId) {
+      return isAuthenticated()
+        && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid))
+        && congregacaoDoUsuario() == congId;
+    }
+
+    function isAdminDaCongregacao(congId) {
+      return pertenceACongregacao(congId)
+        && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    function podeEscreverNaCongregacao(congId) {
+      return pertenceACongregacao(congId)
+        && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.writtenPermission == true;
+    }
+
+    /* =====================================================
+       🔹 CONGREGAÇÕES (TENANT) E SUBCOLEÇÕES
+    ====================================================== */
+    match /congregacoes/{congId} {
+      allow read: if pertenceACongregacao(congId);
+      // congId.matches(...) reforça no servidor a mesma validação de
+      // CongregacaoUtils.normalizarNumeroCongregacao (regex ^\d{3,10}$) —
+      // sem isso, a validação client-side em Cadastro.js pode ser
+      // contornada chamando o SDK do Firestore diretamente.
+      allow create: if isAuthenticated()
+        && request.resource.data.criadoPor == request.auth.uid
+        && congId.matches('^[0-9]{3,10}$');
+      allow update: if isAdminDaCongregacao(congId);
+      allow delete: if false;
+
+      match /territorios/{docId} {
+        allow read: if pertenceACongregacao(congId);
+        allow write: if podeEscreverNaCongregacao(congId);
+      }
+
+      match /designacoes/{docId} {
+        allow read: if pertenceACongregacao(congId);
+        allow write: if podeEscreverNaCongregacao(congId);
+      }
+
+      match /grupos/{docId} {
+        allow read: if pertenceACongregacao(congId);
+        allow write: if isAdminDaCongregacao(congId);
+      }
+
+      match /grupo-bairros/{docId} {
+        allow read: if pertenceACongregacao(congId);
+        allow write: if isAdminDaCongregacao(congId);
+      }
+
+      match /sequencia-config/{docId} {
+        allow read: if pertenceACongregacao(congId);
+        allow write: if podeEscreverNaCongregacao(congId);
+      }
+
+      match /escala-config/{docId} {
+        allow read: if pertenceACongregacao(congId);
+        allow write: if isAdminDaCongregacao(congId);
+
+        // docId já captura o segmento "listas" (o doc-pai das sublistas);
+        // repeti-lo aqui como literal faria o caminho nunca bater com o
+        // dado real (escala-config/listas/{listaId}/{itemId}), negando
+        // acesso por padrão. Por isso só os 2 wildcards restantes.
+        match /{listaId}/{itemId} {
+          allow read: if pertenceACongregacao(congId);
+          allow write: if isAdminDaCongregacao(congId);
+        }
+      }
+
+      // Programação de campo: leitura pública (tela do Salão exibida sem
+      // login, ver Task 11); escrita só pelo admin da congregação.
+      match /programacao/{ano} {
+        allow read: if true;
+        allow write: if isAdminDaCongregacao(congId);
+
+        match /agendamentos/{docId} {
+          allow read: if true;
+          allow write: if isAdminDaCongregacao(congId);
+        }
+      }
+    }
+
+    /* =====================================================
+       🔹 CONVITES (código → congregação)
+    ====================================================== */
+    match /convites/{codigo} {
+      allow read: if isAuthenticated();
+
+      // Só o admin da própria congregação pode gerar um convite pra ela —
+      // exceto no instante do cadastro "criar nova congregação", quando o
+      // usuário ainda não tem usuarios/{uid} (por isso o segundo termo,
+      // que usa criadoPor da própria congregacoes/{congId} em vez de
+      // isAdminDaCongregacao). Sem isso, qualquer autenticado poderia criar
+      // um convite apontando pra congregação de outra pessoa.
+      allow create: if isAuthenticated() && (
+        isAdminDaCongregacao(request.resource.data.congregacaoId)
+        || get(/databases/$(database)/documents/congregacoes/$(request.resource.data.congregacaoId)).data.criadoPor == request.auth.uid
+      );
+
+      allow update: if isAuthenticated() && isAdminDaCongregacao(resource.data.congregacaoId);
+      allow delete: if false;
+    }
+
+    /* =====================================================
+       🔹 USUÁRIOS
+    ====================================================== */
+    match /usuarios/{docId} {
+      // Ler o próprio doc, ou o doc de qualquer membro da própria
+      // congregação (não só admin — a aba "Congregação" do painel lista
+      // nome/email de todos os membros pra qualquer um que a abra, só a
+      // edição de permissões é restrita a admin). Precisa ser "qualquer
+      // membro", não só admin: uma query `usuarios.where('congregacaoId',
+      // '==', congId)` só é permitida pelo Firestore se a regra puder ser
+      // provada pro conjunto inteiro de resultados possíveis — com
+      // isAdminDaCongregacao aqui, a query inteira seria negada pra
+      // usuários não-admin (o ramo uid==docId não vale pra outros
+      // documentos do resultado), quebrando a lista de membros pra eles.
+      allow read: if isAuthenticated()
+        && (request.auth.uid == docId || pertenceACongregacao(resource.data.congregacaoId));
+
+      // Criar o próprio doc:
+      //  - "entrar com convite": só pode nascer sem privilégios (isAdmin e
+      //    writtenPermission false) E precisa referenciar, em codigoConvite,
+      //    um convites/{codigo} existente cujo congregacaoId bate com o
+      //    congregacaoId do próprio doc — sem isso, qualquer autenticado
+      //    poderia se autoatribuir a qualquer congregacaoId existente e
+      //    ganhar leitura cross-tenant sem nunca ter recebido um convite.
+      //  - "criar nova congregação": só pode nascer isAdmin+writtenPermission
+      //    se for o criador da congregação referenciada.
+      allow create: if isAuthenticated() && request.auth.uid == docId && (
+        (
+          request.resource.data.isAdmin == false
+          && request.resource.data.writtenPermission == false
+          && exists(/databases/$(database)/documents/convites/$(request.resource.data.get('codigoConvite', '_')))
+          && get(/databases/$(database)/documents/convites/$(request.resource.data.get('codigoConvite', '_'))).data.congregacaoId == request.resource.data.congregacaoId
+          // Convites sem o campo `ativo` (criados antes desta regra) contam
+          // como ativos; só um `ativo == false` explícito (código
+          // regenerado) bloqueia o cadastro — reforça no servidor a mesma
+          // invalidação que congregacao_admin.js aplica no código antigo.
+          && get(/databases/$(database)/documents/convites/$(request.resource.data.get('codigoConvite', '_'))).data.get('ativo', true) == true
+        )
+        || (
+          request.resource.data.isAdmin == true
+          && request.resource.data.writtenPermission == true
+          && get(/databases/$(database)/documents/congregacoes/$(request.resource.data.congregacaoId)).data.criadoPor == request.auth.uid
+        )
+      );
+
+      // Atualizar: o próprio usuário não pode se autopromover nem trocar de
+      // congregação; um admin pode promover/rebaixar membros da própria
+      // congregação, mas não pode transferi-los para outra.
+      allow update: if isAuthenticated() && (
+        (request.auth.uid == docId
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin', 'writtenPermission', 'congregacaoId']))
+        || (
+          isAdminDaCongregacao(resource.data.congregacaoId)
+          && request.resource.data.congregacaoId == resource.data.congregacaoId
+        )
+      );
+
+      allow delete: if false;
+    }
+  }
+}

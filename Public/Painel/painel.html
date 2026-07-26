@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+    <head>
+        <meta charset="UTF-8">
+        <title>Painel Admin - Territórios</title>
+
+        <!-- Firebase Scripts -->
+        <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+
+        <link rel="stylesheet" href="style.css">
+    </head>
+
+    <body>
+        <header class="app-header">
+            <div class="header-top">
+                <a href="../index.html" class="home-link" target="_blank" title="Voltar para a Home">
+                    <span aria-hidden="true">🏠</span><span class="home-link-label">Home</span>
+                </a>
+                <h1>Painel Administrativo</h1>
+                <div id="user-greeting">Bem-vindo, <span id="username"></span></div>
+            </div>
+            <nav class="tab-nav" aria-label="Navegação do painel">
+                <button type="button" class="tab-btn" data-tab="config" onclick="showTab('config')">
+                    <span aria-hidden="true">⚙️</span> Configurações
+                </button>
+                <button type="button" class="tab-btn" data-tab="relatorio" onclick="showTab('relatorio')">
+                    <span aria-hidden="true">📊</span> Relatório
+                </button>
+                <button type="button" class="tab-btn active" data-tab="gerenciar-escala" onclick="showTab('gerenciar-escala')">
+                    <span aria-hidden="true">🗓️</span> Gerenciar Escalas
+                </button>
+                <button type="button" class="tab-btn" data-tab="sequencia" onclick="showTab('sequencia')">
+                    <span aria-hidden="true">🔁</span> Sequência
+                </button>
+                <button type="button" class="tab-btn" data-tab="grupos" onclick="showTab('grupos')">
+                    <span aria-hidden="true">👥</span> Grupos
+                </button>
+                <button type="button" class="tab-btn" data-tab="congregacao" onclick="showTab('congregacao')">
+                    <span aria-hidden="true">⛪</span> Congregação
+                </button>
+                <a href="../S_13.html" class="tab-btn tab-btn-link">
+                    <span aria-hidden="true">📄</span> Gerar S-13
+                </a>
+            </nav>
+        </header>
+
+        <main>
+
+            <section id="config" class="tab section" style="max-width: 640px; margin: 24px auto;">
+                <h2 style="color: var(--primary); margin-bottom: 20px;">Configurações de Território</h2>
+                <form id="config-form">
+                    <label>Bairro:
+                        <input type="text" id="bairro" placeholder="Ex: Centro" autocomplete="off">
+                    </label>
+                    <label>Número do Mapa:
+                        <input type="number" id="mapa-config" placeholder="Ex: 1" min="1">
+                    </label>
+                    <label>Foto do Mapa:
+                        <input type="file" id="mapa-foto" accept="image/*">
+                        <small style="display:block; color: var(--text-light); margin-top: 6px;">Selecione uma imagem (JPG, PNG, etc.) — tamanho máximo: 2 MB</small>
+                    </label>
+                    <button type="submit" class="btn btn-success" style="justify-content:center; margin-top: 6px;">Salvar Território</button>
+                </form>
+                <div id="config-result" style="margin-top: 18px;"></div>
+            </section>
+
+
+            <section id="relatorio" class="tab" style="max-width: 800px; margin: auto;">
+                <h2>Relatório</h2>
+                <div id="relatorio-result">
+                    <p>Carregando dados...</p>
+                </div>
+            </section>
+
+            <section id="gerenciar-escala" class="tab active">
+                <iframe id="gerador-escala" src="gerenciamento_escala.html">
+                </iframe>
+            </section>
+
+            <section id="sequencia" class="tab" style="max-width:860px; margin:auto; padding:20px;">
+                <h2>Controle de Sequência por Grupo</h2>
+                <p style="color:#888; font-size:0.85rem; margin-bottom:20px;">
+                  O sistema sugere o próximo mapa automaticamente. Use esta tela para forçar um mapa específico para qualquer grupo.
+                </p>
+                <div id="seq-admin-loading" style="text-align:center; color:#888;">Carregando sequências...</div>
+                <div id="seq-admin-container" style="display:none;"></div>
+            </section>
+
+            <section id="grupos" class="tab" style="max-width:860px; margin:auto; padding:20px;">
+                <h2>Grupos e Bairros</h2>
+                <p style="color:#888; font-size:0.85rem; margin-bottom:20px;">
+                  Cada grupo pode ter bairros travados só para ele — nenhum outro grupo (nem a Congregação) registra
+                  designação nesses bairros, exceto em Campanha Congresso ou Campanha Celebração. Um grupo sem
+                  bairros travados pode receber qualquer mapa livre.
+                </p>
+                <div id="grupos-admin-novo-form" style="display:none; gap:8px; margin-bottom:20px;">
+                    <input type="text" id="grupos-admin-novo-input" placeholder="Nome do novo grupo (ex: Grupo Centro)"
+                        style="flex:1; height:36px; border:1px solid #bbb; border-radius:5px; padding:4px 10px;" />
+                    <button class="ga-btn ga-btn-save" onclick="criarGrupoAdmin()">+ Criar grupo</button>
+                </div>
+                <div id="grupos-admin-loading" style="text-align:center; color:#888;">Carregando grupos...</div>
+                <div id="grupos-admin-container" style="display:none;"></div>
+            </section>
+
+            <section id="congregacao" class="tab" style="max-width:860px; margin:auto; padding:20px;">
+                <h2>Congregação</h2>
+
+                <div id="ca-convite-bloco" style="margin-bottom: 24px;">
+                    <p style="color:#888; font-size:0.85rem;">Compartilhe este código com os publicadores da sua congregação — quem se cadastrar com ele entra automaticamente vinculado a ela.</p>
+                    <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+                        <input type="text" id="ca-codigo-convite" readonly style="flex:1; height:36px; border:1px solid #bbb; border-radius:5px; padding:4px 10px; font-weight:700; text-align:center;" />
+                        <button class="ga-btn ga-btn-save" onclick="copiarCodigoConvite()">Copiar</button>
+                        <button class="ga-btn" style="background:#e0e0e0; color:#555;" onclick="regenerarCodigoConvite()">Gerar novo código</button>
+                    </div>
+                </div>
+
+                <h3>Membros</h3>
+                <div id="ca-membros-loading" style="text-align:center; color:#888;">Carregando membros...</div>
+                <div id="ca-membros-container" style="display:none;"></div>
+            </section>
+
+        </main>
+
+        <!-- Scripts carregados na ordem correta -->
+
+        <script>
+            // Aguardar o Firebase ser inicializado antes de carregar o script principal
+            window.addEventListener('load', function () {
+                // Verificar se Firebase foi inicializado
+                if (typeof firebase === 'undefined') {
+                    alert('Erro: Firebase não foi carregado. Verifique a configuração.');
+                    return;
+                }
+
+                // Carregar script principal
+                const script = document.createElement('script');
+                script.src = 'script.js';
+                document.body.appendChild(script);
+            });
+
+            // Função para alternar abas
+            const tabs = document.querySelectorAll('.tab');
+            const tabButtons = document.querySelectorAll('.tab-btn[data-tab]');
+
+            function showTab(id) {
+                tabs.forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.getElementById(id).classList.add('active');
+
+                tabButtons.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.tab === id);
+                });
+
+                const activeBtn = document.querySelector('.tab-btn.active');
+                if (activeBtn && activeBtn.scrollIntoView) {
+                    activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }
+
+                if (id === 'relatorio') {
+                    setTimeout(atualizarRelatorio, 100);
+                }
+
+                if (id === 'sequencia') {
+                    if (typeof carregarPainelSequencia === 'function') {
+                        carregarPainelSequencia();
+                    }
+                }
+
+                if (id === 'grupos') {
+                    if (typeof carregarPainelGrupos === 'function') {
+                        carregarPainelGrupos();
+                    }
+                }
+
+                if (id === 'congregacao') {
+                    if (typeof carregarPainelCongregacao === 'function') {
+                        carregarPainelCongregacao();
+                    }
+                }
+            }
+            // Função para voltar
+            function voltar() {
+                window.location.href = '../index.html'; // Redireciona para a página inicial
+            }
+        </script>
+        <script src="../js/Firebaseconfig.js"></script>
+        <script src="../js/CongregacaoUtils.js"></script>
+        <script src="../js/Tenant.js"></script>
+        <script src="sequencia_admin.js"></script>
+        <script src="grupos_admin.js"></script>
+        <script src="congregacao_admin.js"></script>
+    </body>
+
+</html>

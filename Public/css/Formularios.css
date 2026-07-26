@@ -1,0 +1,584 @@
+/* ------------------------------
+   BASE GERAL
+------------------------------ */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(to right, #1E2733, #4A535E, #1E2733);
+    color: white;
+}
+
+h1.titulo {
+    text-align: center;
+    color: white;
+    font-size: 32px;
+    margin-top: 20px;
+    font-weight: bold;
+}
+
+h2 {
+    color: #253875;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+p {
+    text-align: center;
+}
+
+/* ------------------------------
+   CAIXA DO FORMULÁRIO PRINCIPAL
+------------------------------ */
+#box {
+    background: linear-gradient(to right, #1E2733, #4A535E, #1E2733);
+    border: 1px solid #4A535E;
+    border-radius: 12px;
+    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 550px;
+    margin: 20px auto;
+    padding: 20px;
+    box-sizing: border-box;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.menu {
+    background-color: transparent;
+    border: 1px solid #4A535E;
+    box-shadow: 0px 0px 2px #4A535E;
+    margin-right: 15px;
+}
+
+/* ------------------------------
+   TOPO DA CAIXA DO FORMULÁRIO COM LOGO
+------------------------------ */
+.topo-box {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+#icone {
+    width: 80px;
+    height: auto;
+}
+
+/* ------------------------------
+   CAMPOS DE ENTRADA DO FORMULÁRIO (Geral e Principal)
+------------------------------ */
+.form-group {
+    width: 100%;
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.form-group label {
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: white;
+}
+
+input,
+select {
+    width: 100%;
+    max-width: 400px;
+    height: 35px;
+    border: 2px solid #4A535E;
+    border-radius: 7px;
+    padding: 5px 10px;
+    box-sizing: border-box;
+    color: #1E2733;
+    background-color: white;
+    font-weight: bold;
+    text-align: center;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    cursor:pointer;
+ 
+}
+
+input:focus,
+select:focus {
+    border-color: #253875;
+    box-shadow: 0 0 5px rgba(37, 56, 117, 0.5);
+    outline: none;
+}
+
+input::placeholder {
+    font-weight: bold;
+    color: #888;
+    font-style: italic;
+}
+
+input[readonly] {
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+    color: #1E2733;
+}
+
+#numero_mapa {
+    width: 100px;
+    /* Campo específico para número do mapa */
+}
+
+/* ------------------------------
+   BOTÕES GERAIS E DA CAIXA PRINCIPAL
+------------------------------ */
+.button-group {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+button {
+    background: linear-gradient(to right, #253875, #4c6a97, #253875);
+    /* Gradiente azul para botões principais */
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+button:hover {
+    background: linear-gradient(to right, #4c6a97, #253875, #4c6a97);
+    /* Gradiente invertido no hover */
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* ------------------------------
+   MODAL DE EDIÇÃO
+------------------------------ */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+  
+}
+
+/* Estilo para o conteúdo do modal */
+.modal-content {
+    background: linear-gradient(to right, #1E2733, #4A535E, #1E2733);
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #4A535E;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Estilo para o botão de fechar do modal */
+.close {
+    color: #f44336;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: #253875;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Estilo para o formulário dentro do modal de edição */
+#formEdicao label {
+    display: block;
+    margin: 10px 0 5px;
+    font-weight: bold;
+    color: #fff;
+
+}
+
+#formEdicao input[type="text"],
+#formEdicao input[type="date"] {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #4A535E;
+    border-radius: 5px;
+    box-sizing: border-box;
+    text-align: center;
+    font-size: 14px;
+    color: #1E2733;
+    font-weight: bold;
+    background-color: white;
+
+}
+/* Container para os botões do modal */
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+/* Estilo base para botões do modal */
+#formEdicao button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    min-width: 100px;
+}
+
+/* Botão Salvar (azul) */
+#salvar_edicao {
+    background: linear-gradient(135deg, #253875, #4c6a97);
+    color: white;
+}
+
+#salvar_edicao:hover {
+    background: linear-gradient(135deg, #4c6a97, #253875);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(37, 56, 117, 0.4);
+}
+
+/* Botão Excluir (vermelho) */
+#deletar_registro {
+    background: linear-gradient(135deg, #f44336, #d32f2f);
+    color: white;
+}
+
+#deletar_registro:hover {
+    background: linear-gradient(135deg, #d32f2f, #b71c1c);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(244, 67, 54, 0.4);
+}
+
+/* Botão Cancelar (cinza) */
+#cancelar_edicao {
+    background: linear-gradient(135deg, #4A535E, #1E2733);
+    color: white;
+}
+
+#cancelar_edicao:hover {
+    background: linear-gradient(135deg, #1E2733, #4A535E);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(74, 83, 94, 0.4);
+}
+.edit{
+    color: #96b0d6;
+    margin-bottom: 20px;
+}
+
+/* ------------------------------
+   MODAL DE MENSAGEM (Alertas/Confirmações)
+------------------------------ */
+.dialog-overlay {
+    display: none;
+    /* Inicia oculto */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+    justify-content: center;
+    align-items: center;
+    /* display: flex; REMOVA ESTE PARA INICIAR OCULTO, O JS VAI ADICIONAR */
+}
+
+.dialog-content {
+    background-color: #fefefe;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 0 6px 20px rgba(0, 0, 0, 0.19);
+}
+
+.dialog-message {
+    color: black;
+    text-align: center;
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-top: 20px;
+}
+
+.dialog-message.success {
+    color: green;
+}
+
+.dialog-message.error {
+    color: red;
+}
+
+.close-dialog {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #aaa;
+    cursor: pointer;
+}
+
+.close-dialog:hover {
+    color: black;
+}
+/*------------------------------ 
+MAPAS
+-------------------------------*/
+/* Estilos para o preview da imagem do mapa */
+#mapa-preview {
+    display: none;
+    /* Inicialmente oculto */
+    max-width: 100%;
+    max-height: 400px;
+    /* Limitar altura máxima */
+    width: auto;
+    height: auto;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    margin-top: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    object-fit: contain;
+    /* Manter proporção da imagem */
+    background-color: #f9f9f9;
+}
+
+#mapa-preview:hover {
+    border-color: #007bff;
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+}
+
+/* Container para a imagem do mapa */
+.mapa-container {
+    position: relative;
+    text-align: center;
+    margin-top: 10px;
+}
+
+/* Loading spinner para quando a imagem está carregando */
+.mapa-loading {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Estilo para mensagem de erro da imagem */
+.mapa-error {
+    color: #dc3545;
+    font-style: italic;
+    padding: 10px;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    margin-top: 10px;
+    display: none;
+}
+
+/* Responsive design para dispositivos móveis */
+@media (max-width: 768px) {
+    #mapa-preview {
+        max-height: 250px;
+        border-width: 1px;
+    }
+}
+/* ------------------------------
+   PAINEL DE SUGESTÃO DE SEQUÊNCIA
+------------------------------ */
+.sugestao-panel {
+  width: 100%;
+  max-width: 400px;
+  background: rgba(37, 56, 117, 0.25);
+  border: 1px solid #4c6a97;
+  border-left: 3px solid #5b9e78;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+  transition: opacity 0.2s ease;
+}
+
+.sugestao-panel.sugestao-loading {
+  opacity: 0.55;
+}
+
+.sugestao-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.sugestao-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.sugestao-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sugestao-titulo {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #8fb8a0;
+  margin-bottom: 2px;
+}
+
+.sugestao-mapa {
+  font-size: 0.9rem;
+  color: #e0e8f0;
+  font-weight: 500;
+}
+
+.sugestao-mapa strong {
+  color: #fff;
+  font-size: 1rem;
+}
+
+.btn-sugestao {
+  flex-shrink: 0;
+  background: linear-gradient(to right, #2d6a4f, #4a9970);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background 0.2s, transform 0.15s;
+  white-space: nowrap;
+}
+
+.btn-sugestao:hover {
+  background: linear-gradient(to right, #4a9970, #2d6a4f);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+}
+
+.sugestao-historico {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.sugestao-historico-label {
+  font-size: 0.65rem;
+  color: #8899aa;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.sugestao-chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  font-size: 0.68rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: #aabbc8;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.chip-andamento {
+  background: rgba(37, 56, 117, 0.6);
+  border-color: #4c6a97;
+  color: #c0d4f0;
+}
+
+.chip-proximo {
+  border-color: #c8860a;
+  color: #f0b540;
+  background: rgba(200, 134, 10, 0.15);
+}
+
+/* ------------------------------
+   RESPONSIVIDADE GERAL
+------------------------------ */
+@media (max-width: 600px) {
+    #box {
+        width: 95%;
+        padding: 15px;
+    }
+
+    input,
+    select {
+        width: 100%;
+    }
+
+    h1.titulo {
+        font-size: 24px;
+    }
+
+    #icone {
+        width: 60px;
+    }
+
+    .menu {
+        font-size: 0.8rem;
+        margin-right: 5px;
+        padding: auto;
+        border: 1px solid #4A535E;
+        /* Ajustado para a cor do tema */
+    }
+
+    .button-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    button {
+        width: 100%;
+    }
+}
+

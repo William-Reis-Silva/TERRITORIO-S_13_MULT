@@ -1,0 +1,1846 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Escalas</title>
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+    <script src="../js/Firebaseconfig.js"></script>
+    <script src="../js/CongregacaoUtils.js"></script>
+    <script src="../js/Tenant.js"></script>
+    <script src="eventos.js"></script>
+    <script src="escala-generica.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .preview-list { display: flex; flex-direction: column; gap: 8px; }
+        .preview-semana { border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+        .preview-semana.preview-conflito { border-color: #ffc107; background: #fffdf0; }
+        .preview-row { display: flex; flex-wrap: wrap; gap: 10px; padding: 9px 14px; align-items: center; }
+        .sexta-row { background: #f0fff4; }
+        .sabado-row { background: #f0f4ff; border-top: 1px solid #f0f0f0; }
+        .domingo-row { background: #fff8f0; border-top: 1px solid #f0f0f0; }
+        .preview-data { font-weight: 700; font-size: 0.82em; color: #495057; min-width: 130px; }
+        .preview-pessoa { font-size: 0.88em; color: #212529; padding: 2px 8px; background: rgba(255,255,255,0.7); border-radius: 12px; }
+        .preview-pessoa.conflito { color: #856404; font-weight: 700; background: #fff3cd; }
+        .aviso-conflito { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; font-size: 0.88em; color: #856404; }
+
+        .linha-semanal { border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; background: #fafbfc; }
+        .linha-semanal-campos { display: grid; grid-template-columns: 1fr 1.6fr 0.8fr 1.2fr; gap: 8px; margin-bottom: 8px; }
+        .linha-semanal-campos input, .linha-semanal-campos select { width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.85em; }
+        .linha-semanal-fonte { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .linha-semanal-fonte select { padding: 5px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.82em; }
+        .linha-semanal-acoes { display: flex; gap: 4px; margin-left: auto; }
+        .badge-auto { font-size: 0.75em; color: #856404; background: #fff3cd; padding: 2px 8px; border-radius: 10px; }
+        .toggle-idosos {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9em;
+            color: #495057;
+            margin: 4px 0 14px;
+            padding: 10px 14px;
+            background: #f4f6f8;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        .toggle-idosos input[type="checkbox"] { flex: 0 0 auto; }
+
+        /* ---------- Navegação rápida entre seções ---------- */
+        .quick-nav {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 10px 12px;
+            margin: 0 0 16px;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(6px);
+            border-bottom: 1px solid var(--gray-dark, #dee2e6);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            scrollbar-width: thin;
+        }
+        .quick-nav a {
+            flex: 0 0 auto;
+            font-size: 0.82em;
+            font-weight: 600;
+            color: #16427a;
+            background: #eef3fb;
+            padding: 8px 14px;
+            border-radius: 20px;
+            white-space: nowrap;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+        .quick-nav a:hover,
+        .quick-nav a:focus-visible {
+            background: #16427a;
+            color: #fff;
+        }
+        .section, .status-card { scroll-margin-top: 64px; }
+
+        /* ---------- Toque maior nas checkboxes "Ao salvar, atualizar" ---------- */
+        .salvar-opcoes label {
+            padding: 6px 10px 6px 8px;
+            background: #f4f6f8;
+            border-radius: 20px;
+            min-height: 40px;
+            box-sizing: border-box;
+        }
+        .salvar-opcoes input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary, #1e2733);
+            cursor: pointer;
+        }
+
+        /* ---------- Botões de ação de item (↑ ↓ 🗑️) com alvo de toque maior ---------- */
+        .list-item-actions .btn-sm,
+        .linha-semanal-acoes .btn-sm {
+            min-width: 40px;
+            justify-content: center;
+        }
+
+        /* ---------- Responsivo: Programação Semanal e navegação ---------- */
+        @media (max-width: 640px) {
+            .linha-semanal-campos { grid-template-columns: 1fr; }
+            .quick-nav { top: 0; border-radius: 0; }
+        }
+        @media (max-width: 480px) {
+            .status-card h2, .section-title { font-size: 1.1em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ Gerenciamento de Escalas</h1>
+            <p>Gerencie dirigentes, grupos e participantes</p>
+        </div>
+
+        <nav class="quick-nav" aria-label="Navegação rápida entre seções">
+            <a href="#sec-status">📊 Status</a>
+            <a href="#sec-preview">👀 Preview</a>
+            <a href="#sec-semanal">🗓️ Programação</a>
+            <a href="#sec-listas-custom">📋 Listas</a>
+            <a href="#sec-dirigentes">🎤 Sábado</a>
+            <a href="#sec-grupos">👥 Domingo</a>
+            <a href="#sec-idosos">👴 Idosos</a>
+            <a href="#sec-acompanhantes">🤝 Acomp.</a>
+            <a href="#sec-dirigentes-sexta">🎙️ Sexta</a>
+            <a href="#sec-eventos">🎪 Eventos</a>
+        </nav>
+
+        <!-- Status Atual -->
+        <div class="status-card" id="sec-status">
+            <h2>📊 Estado Atual da Escala</h2>
+            <div class="status-grid" id="status-grid">
+                <div class="loading">Carregando...</div>
+            </div>
+        </div>
+
+        <!-- Preview da Escala -->
+        <div class="section" id="sec-preview">
+            <div class="section-header">
+                <h3 class="section-title">👀 Preview das Próximas Escalas</h3>
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                    <select id="ano-escala" class="btn btn-secondary btn-sm" style="cursor:pointer;font-size:0.85em;" aria-label="Ano da escala"></select>
+                    <button class="btn btn-primary btn-sm" onclick="mostrarPreview()">🔄 Preview</button>
+                    <button class="btn btn-success btn-sm" onclick="gerarESalvarEscala()">💾 Salvar no Firebase</button>
+                </div>
+            </div>
+            <div class="salvar-opcoes" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 4px 4px;font-size:0.83em;color:#495057;">
+                <span style="font-weight:600;">Ao salvar, atualizar:</span>
+                <label style="display:flex;gap:4px;align-items:center;cursor:pointer;"><input type="checkbox" id="chk-sexta"   checked> 🎙️ Sexta</label>
+                <label style="display:flex;gap:4px;align-items:center;cursor:pointer;"><input type="checkbox" id="chk-sabado"  checked> 🎤 Dirigente Sáb.</label>
+                <label style="display:flex;gap:4px;align-items:center;cursor:pointer;"><input type="checkbox" id="chk-idosos"  checked> 👴 Idoso/Acompanhante</label>
+                <label style="display:flex;gap:4px;align-items:center;cursor:pointer;"><input type="checkbox" id="chk-domingo" checked> 👥 Domingo</label>
+                <span id="chk-listas-customizadas-container" style="display:flex;gap:8px;flex-wrap:wrap;"></span>
+            </div>
+            <div id="preview-container">
+                <div class="loading">Carregando...</div>
+            </div>
+        </div>
+
+        <!-- Programação Semanal (tabela pública de atividades) -->
+        <div class="section" id="sec-semanal">
+            <div class="section-header">
+                <h3 class="section-title">🗓️ Programação Semanal</h3>
+                <button class="btn btn-primary btn-sm" onclick="adicionarLinhaSemanal()">
+                    ➕ Adicionar linha
+                </button>
+            </div>
+            <p style="font-size:0.85em;color:#6c757d;margin:0 0 10px;">
+                Controla a tabela de atividades exibida na tabela Programação de Campo. Uma linha
+                "Automática" busca o dirigente numa lista de rotação (existente ou nova); "Manual" usa o
+                texto digitado. Sem nenhuma linha aqui, o site mostra a tabela padrão.
+            </p>
+            <div id="linhas-semanal-container">
+                <div class="loading">Carregando...</div>
+            </div>
+            <div class="form-actions" style="margin-top:10px;">
+                <button class="btn btn-success btn-sm" onclick="salvarConfigSemanal()">
+                    💾 Salvar Programação Semanal
+                </button>
+            </div>
+        </div>
+
+        <!-- Listas Customizadas (rotações além das 5 padrão) -->
+        <div class="section" id="sec-listas-custom">
+            <div class="section-header">
+                <h3 class="section-title">📋 Listas Customizadas</h3>
+            </div>
+            <p style="font-size:0.85em;color:#6c757d;margin:0 0 10px;">
+                Listas de rotação criadas a partir de uma linha "Automática" da Programação Semanal, para
+                dias além de sexta/sábado/domingo. 
+                Exemplo: Se na programação semanal você tiver uma linha "Domingo (Manhã) - Automática (Lista Domingo)",
+uma lista chamada "Domingo" será criada automaticamente e poderá ser usada em outras partes do sistema.
+
+            </p>
+            <div id="listas-customizadas-container">
+                <div class="empty-state">Nenhuma lista customizada ainda.</div>
+            </div>
+        </div>
+
+        <!-- Dirigentes de Sábado -->
+        <div class="section" id="sec-dirigentes">
+            <div class="section-header">
+                <h3 class="section-title">🎤 Dirigentes de Sábado</h3>
+                <button class="btn btn-primary btn-sm" onclick="toggleAddForm('dirigentes')">
+                    ➕ Adicionar
+                </button>
+            </div>
+
+            <div class="add-form" id="add-form-dirigentes">
+                <div class="form-group">
+                    <label for="input-dirigente">Nome do Dirigente:</label>
+                    <input type="text" id="input-dirigente" placeholder="Ex: João Silva">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-success btn-sm" onclick="adicionarItem('dirigentes')">
+                        ✅ Salvar
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleAddForm('dirigentes')">
+                        ❌ Cancelar
+                    </button>
+                </div>
+            </div>
+
+            <div id="list-dirigentes">
+                <div class="loading">Carregando...</div>
+            </div>
+        </div>
+
+        <!-- Grupos de Domingo -->
+        <div class="section" id="sec-grupos">
+            <div class="section-header">
+                <h3 class="section-title">👥 Grupos de Domingo</h3>
+                <button class="btn btn-primary btn-sm" onclick="toggleAddForm('grupos')">
+                    ➕ Adicionar
+                </button>
+            </div>
+
+            <div class="add-form" id="add-form-grupos">
+                <div class="form-group">
+                    <label for="input-grupo">Nome do Grupo:</label>
+                    <input type="text" id="input-grupo" placeholder="Ex: Grupo Esperança">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-success btn-sm" onclick="adicionarItem('grupos')">
+                        ✅ Salvar
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleAddForm('grupos')">
+                        ❌ Cancelar
+                    </button>
+                </div>
+            </div>
+
+            <div id="list-grupos">
+                <div class="loading">Carregando...</div>
+            </div>
+        </div>
+
+        <!-- Idosos -->
+        <div class="section" id="sec-idosos">
+            <div class="section-header">
+                <h3 class="section-title">👴 Idosos </h3>
+                <button class="btn btn-primary btn-sm" onclick="toggleAddForm('idosos')">
+                    ➕ Adicionar
+                </button>
+            </div>
+            <label class="toggle-idosos">
+                <input type="checkbox" id="chk-idosos-ativo" checked onchange="salvarIdososAtivo()">
+                🧓 Mostrar tabela de Idosos no site (desmarque se a congregação não faz esse trabalho especial)
+            </label>
+
+            <div class="add-form" id="add-form-idosos">
+                <div class="form-group">
+                    <label for="input-idoso">Nome do Idoso:</label>
+                    <input type="text" id="input-idoso" placeholder="Ex: Maria Santos">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-success btn-sm" onclick="adicionarItem('idosos')">
+                        ✅ Salvar
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleAddForm('idosos')">
+                        ❌ Cancelar
+                    </button>
+                </div>
+            </div>
+
+            <div id="list-idosos">
+                <div class="loading">Carregando...</div>
+            </div>
+        </div>
+
+        <!-- Acompanhantes -->
+        <div class="section" id="sec-acompanhantes">
+            <div class="section-header">
+                <h3 class="section-title">🤝 Acompanhantes</h3>
+                <button class="btn btn-primary btn-sm" onclick="toggleAddForm('acompanhantes')">
+                    ➕ Adicionar
+                </button>
+            </div>
+
+            <div class="add-form" id="add-form-acompanhantes">
+                <div class="form-group">
+                    <label for="input-acompanhante">Nome do Acompanhante:</label>
+                    <input type="text" id="input-acompanhante" placeholder="Ex: Pedro Lima">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-success btn-sm" onclick="adicionarItem('acompanhantes')">
+                        ✅ Salvar
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleAddForm('acompanhantes')">
+                        ❌ Cancelar
+                    </button>
+                </div>
+            </div>
+
+            <div id="list-acompanhantes">
+                <div class="loading">Carregando...</div>
+            </div>
+        </div>
+
+        <!-- Dirigentes de Sexta-Feira -->
+        <div class="section" id="sec-dirigentes-sexta">
+            <div class="section-header">
+                <h3 class="section-title">🎙️ Dirigentes de Sexta-Feira</h3>
+                <button class="btn btn-primary btn-sm" onclick="toggleAddForm('dirigentes-sexta')">
+                    ➕ Adicionar
+                </button>
+            </div>
+
+            <div class="add-form" id="add-form-dirigentes-sexta">
+                <div class="form-group">
+                    <label for="input-dirigente-sexta">Nome do Dirigente de Sexta:</label>
+                    <input type="text" id="input-dirigente-sexta" placeholder="Ex: William">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-success btn-sm" onclick="adicionarItem('dirigentes-sexta')">
+                        ✅ Salvar
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleAddForm('dirigentes-sexta')">
+                        ❌ Cancelar
+                    </button>
+                </div>
+            </div>
+
+            <div id="list-dirigentes-sexta">
+                <div class="loading">Carregando...</div>
+            </div>
+        </div>
+
+        <!-- Eventos Especiais -->
+        <div class="section" id="sec-eventos">
+            <div class="section-header">
+                <h3 class="section-title">🎪 Eventos Especiais</h3>
+                <button class="btn btn-primary btn-sm" onclick="toggleEventoForm()">
+                    ➕ Adicionar
+                </button>
+            </div>
+
+            <div class="add-form" id="add-form-eventos">
+                <div class="form-group">
+                    <label for="input-evento-descricao">Descrição do Evento:</label>
+                    <input type="text" id="input-evento-descricao" placeholder="Ex: Congresso">
+                </div>
+                <div class="form-group">
+                    <label for="input-evento-inicio">Data Início:</label>
+                    <input type="date" id="input-evento-inicio">
+                </div>
+                <div class="form-group">
+                    <label for="input-evento-fim">Data Fim (deixe em branco se for só 1 dia):</label>
+                    <input type="date" id="input-evento-fim">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-success btn-sm" onclick="adicionarEvento()">
+                        ✅ Salvar
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleEventoForm()">
+                        ❌ Cancelar
+                    </button>
+                </div>
+            </div>
+
+            <div id="list-eventos">
+                <div class="loading">Carregando...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração Firebase (substitua pelos seus dados)
+        // Assumindo que firebase já está carregado
+
+        const db = firebase.firestore();
+
+        // Coleções escopadas por congregação (multi-tenant, ver firestore.rules)
+        async function escalaCol() {
+            const congId = await Tenant.resolverCongId();
+            return Tenant.collectionSync(congId, 'escala-config');
+        }
+        async function programacaoCol() {
+            const congId = await Tenant.resolverCongId();
+            return Tenant.collectionSync(congId, 'programacao');
+        }
+
+        // Mapear tipos para coleções
+        const collections = {
+            'dirigentes': 'dirigentes-sabado',
+            'grupos': 'grupos-domingo',
+            'idosos': 'idosos',
+            'acompanhantes': 'acompanhantes',
+            'dirigentes-sexta': 'dirigentes-sexta'
+        };
+
+        // Mapear tipos para IDs de input
+        const inputIds = {
+            'dirigentes': 'dirigente',
+            'grupos': 'grupo',
+            'idosos': 'idoso',
+            'acompanhantes': 'acompanhante',
+            'dirigentes-sexta': 'dirigente-sexta'
+        };
+
+        // ===================== PROGRAMAÇÃO SEMANAL (multi-congregação) =====================
+        let linhasSemanal = [];
+        let idososAtivo = true;
+
+        const LISTA_LABELS = {
+            'dirigentes-sabado': 'Dirigentes de Sábado',
+            'grupos-domingo': 'Grupos de Domingo',
+            'idosos': 'Idosos',
+            'acompanhantes': 'Acompanhantes',
+            'dirigentes-sexta': 'Dirigentes de Sexta'
+        };
+
+        function humanizarSlug(id) {
+            return id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        }
+
+        function labelDaLista(listaId) {
+            return LISTA_LABELS[listaId] || humanizarSlug(listaId);
+        }
+
+        function escAttr(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function listaIdsCustomizadosAtuais() {
+            const ids = new Set();
+            linhasSemanal.forEach(l => {
+                if (l.fonte === 'auto' && l.listaId && !EscalaGenerica.isListaIdLegado(l.listaId)) {
+                    ids.add(l.listaId);
+                }
+            });
+            return [...ids];
+        }
+
+        async function carregarConfigSemanal() {
+            const container = document.getElementById('linhas-semanal-container');
+            try {
+                const doc = await (await programacaoCol()).doc('config-semanal').get();
+                const data = doc.exists ? doc.data() : {};
+                linhasSemanal = Array.isArray(data.linhas) ? data.linhas.map(l => ({ ...l })) : [];
+                idososAtivo = data.idososAtivo !== false;
+                document.getElementById('chk-idosos-ativo').checked = idososAtivo;
+                sincronizarListasCustomizadas();
+                renderLinhasSemanal();
+            } catch (error) {
+                console.error('Erro ao carregar Programação Semanal:', error);
+                container.innerHTML = '<div class="empty-state">Erro ao carregar</div>';
+            }
+        }
+
+        function renderLinhasSemanal() {
+            const container = document.getElementById('linhas-semanal-container');
+
+            if (!linhasSemanal.length) {
+                container.innerHTML = '<div class="empty-state">Nenhuma linha cadastrada. Clique em "Adicionar linha" para começar.</div>';
+                return;
+            }
+
+            // 'idosos'/'acompanhantes' ficam fora: só existem como par (idosos_{data} guarda
+            // {idoso, acompanhante}, não {dirigente}), não fazem sentido como "dirigente" de uma linha.
+            const listaIdsLegadoParaLinha = EscalaGenerica.LISTAIDS_LEGADO.filter(
+                id => id in EscalaGenerica.PREFIXO_DOC_LEGADO
+            );
+            const listaIdsDisponiveis = [...listaIdsLegadoParaLinha, ...listaIdsCustomizadosAtuais()];
+
+            container.innerHTML = linhasSemanal.map((linha, i) => {
+                const opcoesLista = listaIdsDisponiveis
+                    .map(id => `<option value="${id}" ${linha.listaId === id ? 'selected' : ''}>${escAttr(labelDaLista(id))}</option>`)
+                    .join('');
+
+                return `
+                <div class="linha-semanal">
+                    <div class="linha-semanal-campos">
+                        <select onchange="atualizarLinhaSemanalCampo(${i}, 'dia', this.value)">
+                            ${Object.entries(EscalaGenerica.DIA_LABELS).map(([id, label]) => `<option value="${id}" ${linha.dia === id ? 'selected' : ''}>${label}</option>`).join('')}
+                        </select>
+                        <input type="text" placeholder="Modalidade (ex: Casa em casa)" value="${escAttr(linha.modalidade)}" oninput="atualizarLinhaSemanalCampo(${i}, 'modalidade', this.value)">
+                        <input type="time" value="${escAttr(linha.hora)}" oninput="atualizarLinhaSemanalCampo(${i}, 'hora', this.value)">
+                        <input type="text" placeholder="Local / Saída" value="${escAttr(linha.local)}" oninput="atualizarLinhaSemanalCampo(${i}, 'local', this.value)">
+                    </div>
+                    <div class="linha-semanal-fonte">
+                        <select onchange="mudarFonteLinha(${i}, this.value)">
+                            <option value="manual" ${linha.fonte !== 'auto' ? 'selected' : ''}>✎ Manual</option>
+                            <option value="auto" ${linha.fonte === 'auto' ? 'selected' : ''}>⟳ Automática</option>
+                        </select>
+                        ${linha.fonte === 'auto' ? `
+                            <select onchange="escolherListaParaLinha(${i}, this.value)">
+                                <option value="">Escolha a lista...</option>
+                                ${opcoesLista}
+                                <option value="__nova__">+ Criar nova lista...</option>
+                            </select>
+                        ` : `
+                            <input type="text" placeholder="Nome do dirigente" value="${escAttr(linha.dirigenteManual)}" oninput="atualizarLinhaSemanalCampo(${i}, 'dirigenteManual', this.value)" style="flex:1;padding:6px 8px;border:1px solid #ccc;border-radius:6px;font-size:0.85em;">
+                        `}
+                        <div class="linha-semanal-acoes">
+                            <button class="btn btn-secondary btn-sm" aria-label="Mover linha para cima" onclick="moverLinhaSemanal(${i}, 'up')" ${i === 0 ? 'disabled' : ''}>↑</button>
+                            <button class="btn btn-secondary btn-sm" aria-label="Mover linha para baixo" onclick="moverLinhaSemanal(${i}, 'down')" ${i === linhasSemanal.length - 1 ? 'disabled' : ''}>↓</button>
+                            <button class="btn btn-danger btn-sm" aria-label="Remover linha" onclick="removerLinhaSemanal(${i})">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function atualizarLinhaSemanalCampo(i, campo, valor) {
+            linhasSemanal[i][campo] = valor;
+        }
+
+        function mudarFonteLinha(i, valor) {
+            linhasSemanal[i].fonte = valor;
+            if (valor === 'manual') {
+                delete linhasSemanal[i].listaId;
+            } else {
+                delete linhasSemanal[i].dirigenteManual;
+            }
+            renderLinhasSemanal();
+        }
+
+        function escolherListaParaLinha(i, valor) {
+            if (valor === '__nova__') {
+                criarNovaListaParaLinha(i);
+                return;
+            }
+            linhasSemanal[i].listaId = valor || undefined;
+            sincronizarListasCustomizadas();
+            renderLinhasSemanal();
+        }
+
+        function criarNovaListaParaLinha(i) {
+            const nome = prompt('Nome da nova lista de rotação (ex: "Dirigentes de Terça"):');
+            if (!nome || !nome.trim()) { renderLinhasSemanal(); return; }
+
+            const slug = EscalaGenerica.slugify(nome);
+            if (!slug) {
+                alert('❌ Nome inválido.');
+                renderLinhasSemanal();
+                return;
+            }
+            if (EscalaGenerica.isListaIdLegado(slug)) {
+                alert('❌ Esse nome colide com uma das 5 listas padrão. Escolha outro nome.');
+                renderLinhasSemanal();
+                return;
+            }
+
+            linhasSemanal[i].listaId = slug;
+            sincronizarListasCustomizadas();
+            renderLinhasSemanal();
+            alert(`✅ Lista "${nome}" criada. Adicione os nomes dela em "Listas Customizadas" abaixo.`);
+        }
+
+        function adicionarLinhaSemanal() {
+            linhasSemanal.push({ dia: 'segunda', modalidade: '', hora: '', local: '', fonte: 'manual', dirigenteManual: '' });
+            renderLinhasSemanal();
+        }
+
+        function removerLinhaSemanal(i) {
+            linhasSemanal.splice(i, 1);
+            sincronizarListasCustomizadas();
+            renderLinhasSemanal();
+        }
+
+        function moverLinhaSemanal(i, direcao) {
+            const j = direcao === 'up' ? i - 1 : i + 1;
+            if (j < 0 || j >= linhasSemanal.length) return;
+            [linhasSemanal[i], linhasSemanal[j]] = [linhasSemanal[j], linhasSemanal[i]];
+            renderLinhasSemanal();
+        }
+
+        function renderListaSection(listaId) {
+            const container = document.getElementById('listas-customizadas-container');
+            const label = labelDaLista(listaId);
+            const bloco = document.createElement('div');
+            bloco.innerHTML = `
+                <div class="section-header" style="margin-top:14px;">
+                    <h3 class="section-title" style="font-size:1em;">🔁 ${escAttr(label)}</h3>
+                    <button class="btn btn-primary btn-sm" onclick="toggleAddForm('${listaId}')">➕ Adicionar</button>
+                </div>
+                <div class="add-form" id="add-form-${listaId}">
+                    <div class="form-group">
+                        <label for="input-${listaId}">Nome:</label>
+                        <input type="text" id="input-${listaId}" placeholder="Ex: Ana Souza">
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-success btn-sm" onclick="adicionarItem('${listaId}')">✅ Salvar</button>
+                        <button class="btn btn-secondary btn-sm" onclick="toggleAddForm('${listaId}')">❌ Cancelar</button>
+                    </div>
+                </div>
+                <div id="list-${listaId}"><div class="loading">Carregando...</div></div>
+            `;
+            container.appendChild(bloco);
+        }
+
+        function sincronizarListasCustomizadas() {
+            const ids = listaIdsCustomizadosAtuais();
+            const container = document.getElementById('listas-customizadas-container');
+            const eraVazio = container.querySelector('.empty-state');
+
+            if (!ids.length) {
+                container.innerHTML = '<div class="empty-state">Nenhuma lista customizada ainda.</div>';
+            } else {
+                if (eraVazio) container.innerHTML = '';
+                ids.forEach(listaId => {
+                    collections[listaId] = listaId;
+                    inputIds[listaId] = listaId;
+                    if (!document.getElementById(`list-${listaId}`)) {
+                        renderListaSection(listaId);
+                        carregarLista(listaId);
+                    }
+                });
+            }
+
+            renderChecklistListasCustomizadas(ids);
+        }
+
+        function renderChecklistListasCustomizadas(ids) {
+            const container = document.getElementById('chk-listas-customizadas-container');
+            if (!ids.length) { container.innerHTML = ''; return; }
+            container.innerHTML = ids.map(listaId => `
+                <label style="display:flex;gap:4px;align-items:center;cursor:pointer;">
+                    <input type="checkbox" class="chk-lista-customizada" value="${listaId}" checked> 🔁 ${escAttr(labelDaLista(listaId))}
+                </label>
+            `).join('');
+        }
+
+        async function salvarIdososAtivo() {
+            idososAtivo = document.getElementById('chk-idosos-ativo').checked;
+            try {
+                await (await programacaoCol()).doc('config-semanal').set({ idososAtivo }, { merge: true });
+            } catch (error) {
+                console.error('Erro ao salvar preferência de Idosos:', error);
+                alert('❌ Erro ao salvar: ' + error.message);
+            }
+        }
+
+        async function salvarConfigSemanal() {
+            for (const linha of linhasSemanal) {
+                if (!linha.dia || !linha.modalidade || !linha.modalidade.trim() || !linha.hora || !linha.local || !linha.local.trim()) {
+                    alert('❌ Preencha dia, modalidade, hora e local em todas as linhas.');
+                    return;
+                }
+                if (linha.fonte === 'auto' && !linha.listaId) {
+                    alert('❌ Escolha uma lista de rotação para as linhas automáticas (ou mude para Manual).');
+                    return;
+                }
+                if (linha.fonte !== 'auto' && (!linha.dirigenteManual || !linha.dirigenteManual.trim())) {
+                    alert('❌ Preencha o nome do dirigente nas linhas manuais (ou mude para Automática).');
+                    return;
+                }
+            }
+
+            try {
+                const linhasParaSalvar = linhasSemanal.map((l, i) => ({
+                    id: l.id || `l_${Date.now()}_${i}`,
+                    dia: l.dia,
+                    modalidade: l.modalidade.trim(),
+                    hora: l.hora,
+                    local: l.local.trim(),
+                    fonte: l.fonte === 'auto' ? 'auto' : 'manual',
+                    ...(l.fonte === 'auto' ? { listaId: l.listaId } : { dirigenteManual: l.dirigenteManual.trim() })
+                }));
+
+                await (await programacaoCol()).doc('config-semanal').set({
+                    linhas: linhasParaSalvar,
+                    idososAtivo,
+                    atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                linhasSemanal = linhasParaSalvar.map(l => ({ ...l }));
+                renderLinhasSemanal();
+                alert('✅ Programação Semanal salva com sucesso!');
+            } catch (error) {
+                console.error('Erro ao salvar Programação Semanal:', error);
+                alert('❌ Erro ao salvar: ' + error.message);
+            }
+        }
+
+        // Carregar tudo ao iniciar
+        window.addEventListener('load', () => {
+            // Popular seletor de ano
+            const sel = document.getElementById('ano-escala');
+            const anoAtual = new Date().getFullYear();
+            for (let a = anoAtual; a <= anoAtual + 2; a++) {
+                const opt = document.createElement('option');
+                opt.value = a;
+                opt.textContent = a;
+                sel.appendChild(opt);
+            }
+
+            carregarEstado();
+            carregarLista('dirigentes');
+            carregarLista('grupos');
+            carregarLista('idosos');
+            carregarLista('acompanhantes');
+            carregarLista('dirigentes-sexta');
+            carregarEventos();
+            carregarConfigSemanal();
+            mostrarPreview();
+        });
+
+        // Carregar estado atual
+        async function carregarEstado() {
+            const container = document.getElementById('status-grid');
+            
+            try {
+                const estadoDoc = await (await escalaCol()).doc('estado-atual').get();
+                
+                if (!estadoDoc.exists) {
+                    container.innerHTML = `
+                        <div class="status-item">
+                            <div class="status-label">Status</div>
+                            <div class="status-value">Nenhuma escala gerada ainda</div>
+                        </div>
+                        <div class="status-item" style="grid-column: 1 / -1; background: #fff3cd; border-left-color: #ffc107;">
+                            <div class="status-label">💡 Dica</div>
+                            <div class="status-value" style="font-size: 0.9em;">
+                                Cadastre dirigentes, grupos, idosos e acompanhantes abaixo, depois vá em "Programação" para gerar a escala do ano.
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const estado = estadoDoc.data();
+
+                // Buscar nomes das listas
+                const [dirigentesSnap, gruposSnap, idososSnap, acompanhantesSnap, sextaEstadoSnap] = await Promise.all([
+                    (await escalaCol()).doc('listas').collection('dirigentes-sabado').orderBy('ordem').get(),
+                    (await escalaCol()).doc('listas').collection('grupos-domingo').orderBy('ordem').get(),
+                    (await escalaCol()).doc('listas').collection('idosos').orderBy('ordem').get(),
+                    (await escalaCol()).doc('listas').collection('acompanhantes').orderBy('ordem').get(),
+                    (await escalaCol()).doc('listas').collection('dirigentes-sexta').orderBy('ordem').get()
+                ]);
+
+                const dirigentes = [], grupos = [], idosos = [], acompanhantes = [], dirSextaE = [];
+                dirigentesSnap.forEach(doc => dirigentes.push(doc.data().nome));
+                gruposSnap.forEach(doc => grupos.push(doc.data().nome));
+                idososSnap.forEach(doc => idosos.push(doc.data().nome));
+                acompanhantesSnap.forEach(doc => acompanhantes.push(doc.data().nome));
+                sextaEstadoSnap.forEach(doc => dirSextaE.push(doc.data().nome));
+
+                // Obter nomes com base nos índices
+                const proximoDirigente = dirigentes[estado.dirigenteSabado ?? 0] || 'Não cadastrado';
+                const proximoGrupo = grupos[estado.grupoDomingo ?? 0] || 'Não cadastrado';
+                const proximoIdoso = idosos[estado.idoso ?? 0] || 'Não cadastrado';
+                const proximoAcompanhante = acompanhantes[estado.acompanhante ?? 0] || 'Não cadastrado';
+                const proximoDirSexta = dirSextaE.length ? (dirSextaE[(estado.dirigenteSexta ?? 0) % dirSextaE.length] || 'Não cadastrado') : 'Nenhum cadastrado';
+
+                const proximoAno = (estado.ultimoAnoGerado || new Date().getFullYear()) + 1;
+
+                // Calcular posição visual (índice + 1)
+                const posicaoDirigente = (estado.dirigenteSabado ?? 0) + 1;
+                const posicaoGrupo = (estado.grupoDomingo ?? 0) + 1;
+                const posicaoIdoso = (estado.idoso ?? 0) + 1;
+                const posicaoAcompanhante = (estado.acompanhante ?? 0) + 1;
+                const posicaoSexta = dirSextaE.length ? (estado.dirigenteSexta ?? 0) + 1 : 0;
+
+                container.innerHTML = `
+                    <div class="status-item" style="grid-column: 1 / -1; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+                        <div class="status-label" style="color: rgba(255,255,255,0.9);">📅 Último Ano Gerado</div>
+                        <div class="status-value" style="font-size: 2em;">${estado.ultimoAnoGerado || '-'}</div>
+                        <div style="font-size: 0.85em; margin-top: 5px; opacity: 0.9;">
+                            Próximo ano será: ${proximoAno}
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">🎙️ Próximo 1° Dirigente de Sexta</div>
+                        <div class="status-value">${proximoDirSexta}</div>
+                        <div style="font-size: 0.75em; color: #6c757d; margin-top: 5px;">
+                            Posição ${posicaoSexta} de ${dirSextaE.length}
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">🎤 Próximo 1° Dirigente de Sábado</div>
+                        <div class="status-value">${proximoDirigente}</div>
+                        <div style="font-size: 0.75em; color: #6c757d; margin-top: 5px;">
+                            Posição ${posicaoDirigente} de ${dirigentes.length}
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">👥 Próximo 1° Grupo de Domingo</div>
+                        <div class="status-value">${proximoGrupo}</div>
+                        <div style="font-size: 0.75em; color: #6c757d; margin-top: 5px;">
+                            Posição ${posicaoGrupo} de ${grupos.length}
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">👴 Próximo 1° Idoso</div>
+                        <div class="status-value">${proximoIdoso}</div>
+                        <div style="font-size: 0.75em; color: #6c757d; margin-top: 5px;">
+                            Posição ${posicaoIdoso} de ${idosos.length}
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">🤝 Próximo 1° Acompanhante</div>
+                        <div class="status-value">${proximoAcompanhante}</div>
+                        <div style="font-size: 0.75em; color: #6c757d; margin-top: 5px;">
+                            Posição ${posicaoAcompanhante} de ${acompanhantes.length}
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Erro ao carregar estado:', error);
+                container.innerHTML = `
+                    <div class="status-item" style="grid-column: 1 / -1;">
+                        <div class="status-label">❌ Erro ao carregar</div>
+                        <div class="status-value" style="font-size: 0.9em; color: #dc3545;">
+                            ${error.message}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Carregar lista
+        async function carregarLista(tipo) {
+            const container = document.getElementById(`list-${tipo}`);
+            const collectionName = collections[tipo];
+
+            try {
+                const snapshot = await (await escalaCol())
+                    .doc('listas')
+                    .collection(collectionName)
+                    .orderBy('ordem')
+                    .get();
+
+                if (snapshot.empty) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            Nenhum item cadastrado. Clique em "Adicionar" para começar.
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    html += `
+                        <div class="list-item">
+                            <div class="list-item-info">
+                                <div class="list-item-order">${data.ordem + 1}</div>
+                                <div class="list-item-name">${data.nome}</div>
+                            </div>
+                            <div class="list-item-actions">
+                                <button class="btn btn-secondary btn-sm" aria-label="Mover para cima" onclick="moverItem('${tipo}', '${doc.id}', 'up')" ${data.ordem === 0 ? 'disabled' : ''}>
+                                    ↑
+                                </button>
+                                <button class="btn btn-secondary btn-sm" aria-label="Mover para baixo" onclick="moverItem('${tipo}', '${doc.id}', 'down')">
+                                    ↓
+                                </button>
+                                <button class="btn btn-danger btn-sm" aria-label="Remover ${data.nome}" onclick="removerItem('${tipo}', '${doc.id}', '${data.nome}')">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Erro ao carregar lista:', error);
+                container.innerHTML = '<div class="empty-state">Erro ao carregar</div>';
+            }
+        }
+
+        // Toggle formulário
+        function toggleAddForm(tipo) {
+            const form = document.getElementById(`add-form-${tipo}`);
+            const input = document.getElementById(`input-${inputIds[tipo]}`);
+
+            form.classList.toggle('active');
+            if (form.classList.contains('active')) {
+                input.focus();
+                input.value = '';
+            }
+        }
+
+        // Adicionar item
+        async function adicionarItem(tipo) {
+            const input = document.getElementById(`input-${inputIds[tipo]}`);
+            const nome = input.value.trim();
+
+            if (!nome) {
+                alert('Digite um nome');
+                return;
+            }
+
+            const collectionName = collections[tipo];
+
+            try {
+                // Buscar última ordem
+                const snapshot = await (await escalaCol())
+                    .doc('listas')
+                    .collection(collectionName)
+                    .orderBy('ordem', 'desc')
+                    .limit(1)
+                    .get();
+
+                const ultimaOrdem = snapshot.empty ? -1 : snapshot.docs[0].data().ordem;
+
+                // Adicionar novo
+                await (await escalaCol())
+                    .doc('listas')
+                    .collection(collectionName)
+                    .add({
+                        nome,
+                        ordem: ultimaOrdem + 1,
+                        ativo: true,
+                        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                toggleAddForm(tipo);
+                carregarLista(tipo);
+                carregarEstado();
+                mostrarPreview();
+                alert('✅ Adicionado com sucesso!');
+            } catch (error) {
+                console.error('Erro ao adicionar:', error);
+                alert('❌ Erro ao adicionar: ' + error.message);
+            }
+        }
+
+        // Remover item
+        async function removerItem(tipo, docId, nome) {
+            if (!confirm(`Tem certeza que deseja remover "${nome}"?`)) {
+                return;
+            }
+
+            const collectionName = collections[tipo];
+
+            try {
+                await (await escalaCol())
+                    .doc('listas')
+                    .collection(collectionName)
+                    .doc(docId)
+                    .delete();
+
+                // Reordenar
+                await reordenarLista(tipo);
+                carregarLista(tipo);
+                carregarEstado();
+                mostrarPreview();
+                alert('✅ Removido com sucesso!');
+            } catch (error) {
+                console.error('Erro ao remover:', error);
+                alert('❌ Erro ao remover: ' + error.message);
+            }
+        }
+
+        // Mover item
+        async function moverItem(tipo, docId, direcao) {
+            const collectionName = collections[tipo];
+
+            try {
+                const snapshot = await (await escalaCol())
+                    .doc('listas')
+                    .collection(collectionName)
+                    .orderBy('ordem')
+                    .get();
+
+                const items = [];
+                snapshot.forEach(doc => {
+                    items.push({ id: doc.id, ...doc.data() });
+                });
+
+                const index = items.findIndex(item => item.id === docId);
+                if (index === -1) return;
+
+                if (direcao === 'up' && index > 0) {
+                    // Trocar com anterior
+                    const temp = items[index].ordem;
+                    items[index].ordem = items[index - 1].ordem;
+                    items[index - 1].ordem = temp;
+
+                    await (await escalaCol()).doc('listas').collection(collectionName).doc(items[index].id).update({ ordem: items[index].ordem });
+                    await (await escalaCol()).doc('listas').collection(collectionName).doc(items[index - 1].id).update({ ordem: items[index - 1].ordem });
+                } else if (direcao === 'down' && index < items.length - 1) {
+                    // Trocar com próximo
+                    const temp = items[index].ordem;
+                    items[index].ordem = items[index + 1].ordem;
+                    items[index + 1].ordem = temp;
+
+                    await (await escalaCol()).doc('listas').collection(collectionName).doc(items[index].id).update({ ordem: items[index].ordem });
+                    await (await escalaCol()).doc('listas').collection(collectionName).doc(items[index + 1].id).update({ ordem: items[index + 1].ordem });
+                }
+
+                carregarLista(tipo);
+            } catch (error) {
+                console.error('Erro ao mover:', error);
+                alert('❌ Erro ao mover: ' + error.message);
+            }
+        }
+
+        // Preview das próximas escalas — lê o que está salvo no Firebase
+        async function mostrarPreview() {
+            const container = document.getElementById('preview-container');
+            container.innerHTML = '<div class="loading">Carregando escala salva...</div>';
+
+            try {
+                const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+                // Próxima sexta-feira
+                const hoje = new Date();
+                hoje.setHours(0, 0, 0, 0);
+                const diasAteSex = (5 - hoje.getDay() + 7) % 7 || 7;
+                const proxSexta = new Date(hoje);
+                proxSexta.setDate(hoje.getDate() + diasAteSex);
+
+                // Montar datas das próximas 8 semanas
+                const semanas = [];
+                for (let i = 0; i < 8; i++) {
+                    const sexta  = new Date(proxSexta); sexta.setDate(proxSexta.getDate() + i * 7);
+                    const sabado = new Date(sexta);     sabado.setDate(sexta.getDate() + 1);
+                    const domingo= new Date(sexta);     domingo.setDate(sexta.getDate() + 2);
+                    semanas.push({ sexta, sabado, domingo });
+                }
+
+                // Buscar todos os documentos do ano atual (e próximo se necessário)
+                const anosNeeded = [...new Set(semanas.map(s => s.sabado.getFullYear()))];
+                const snapsPorAno = {};
+                await Promise.all(anosNeeded.map(async ano => {
+                    const snap = await (await programacaoCol()).doc(String(ano)).collection('agendamentos').get();
+                    snapsPorAno[ano] = {};
+                    snap.forEach(doc => { snapsPorAno[ano][doc.id] = doc.data(); });
+                }));
+
+                // Montar resultado
+                const resultado = semanas.map(s => {
+                    const ano = s.sabado.getFullYear();
+                    const docs = snapsPorAno[ano] || {};
+                    const sextaDoc = docs[`sexta_${fmt(s.sexta)}`]   || null;
+                    const sabDoc   = docs[`sabado_${fmt(s.sabado)}`]  || null;
+                    const idoDoc   = docs[`idosos_${fmt(s.sabado)}`]  || null;
+                    const domDoc   = docs[`domingo_${fmt(s.domingo)}`]|| null;
+
+                    return {
+                        sexta:           s.sexta.toLocaleDateString('pt-BR'),
+                        sabado:          s.sabado.toLocaleDateString('pt-BR'),
+                        domingo:         s.domingo.toLocaleDateString('pt-BR'),
+                        dirigenteSexta:  sextaDoc ? sextaDoc.dirigente : null,
+                        dirigente:       sabDoc   ? sabDoc.dirigente   : null,
+                        idoso:           idoDoc   ? idoDoc.idoso       : null,
+                        acompanhante:    idoDoc   ? idoDoc.acompanhante: null,
+                        grupo:           domDoc   ? domDoc.grupo       : null,
+                        agendado:        !!(sabDoc || domDoc)
+                    };
+                });
+
+                const naoAgendadas = resultado.filter(s => !s.agendado).length;
+                let html = '';
+
+                if (naoAgendadas === resultado.length) {
+                    html = '<div class="empty-state">Nenhuma escala salva para as próximas semanas. Use "💾 Salvar no Firebase" para gerar.</div>';
+                    container.innerHTML = html;
+                    return;
+                }
+
+                if (naoAgendadas > 0) {
+                    html += `<div class="aviso-conflito" style="border-color:#6c757d;background:#f8f9fa;color:#495057;">ℹ️ ${naoAgendadas} semana(s) sem escala salva — use "💾 Salvar no Firebase" para completar.</div>`;
+                }
+
+                html += '<div class="preview-list">';
+                resultado.forEach(s => {
+                    html += `<div class="preview-semana">`;
+                    if (s.dirigenteSexta) {
+                        html += `<div class="preview-row sexta-row">
+                            <span class="preview-data">📅 Sex ${s.sexta}</span>
+                            <span class="preview-pessoa">🎙️ ${s.dirigenteSexta}</span>
+                        </div>`;
+                    }
+                    html += `<div class="preview-row sabado-row">
+                        <span class="preview-data">📅 Sáb ${s.sabado}</span>
+                        ${s.dirigente   ? `<span class="preview-pessoa">🎤 ${s.dirigente}</span>`    : '<span class="preview-pessoa" style="opacity:.5">🎤 —</span>'}
+                        ${s.idoso       ? `<span class="preview-pessoa">👴 ${s.idoso}</span>`        : ''}
+                        ${s.acompanhante? `<span class="preview-pessoa">🤝 ${s.acompanhante}</span>` : ''}
+                    </div>
+                    <div class="preview-row domingo-row">
+                        <span class="preview-data">📅 Dom ${s.domingo}</span>
+                        ${s.grupo ? `<span class="preview-pessoa">👥 ${s.grupo}</span>` : '<span class="preview-pessoa" style="opacity:.5">👥 —</span>'}
+                    </div>
+                    </div>`;
+                });
+                html += '</div>';
+
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Erro ao carregar preview:', error);
+                container.innerHTML = `<div class="empty-state" style="color:#dc3545">Erro ao carregar: ${error.message}</div>`;
+            }
+        }
+
+        // Gerar e salvar escala no Firebase
+        async function gerarESalvarEscala() {
+            const ano          = parseInt(document.getElementById('ano-escala').value);
+            const salvarSexta  = document.getElementById('chk-sexta').checked;
+            const salvarSabado = document.getElementById('chk-sabado').checked;
+            const salvarIdosos = document.getElementById('chk-idosos').checked;
+            const salvarDom    = document.getElementById('chk-domingo').checked;
+
+            if (!salvarSexta && !salvarSabado && !salvarIdosos && !salvarDom) {
+                alert('Selecione ao menos uma categoria para salvar.');
+                return;
+            }
+
+            try {
+                const base = (await escalaCol()).doc('listas');
+                const [dirSnap, grpSnap, idoSnap, acoSnap, sextaSnap2] = await Promise.all([
+                    base.collection('dirigentes-sabado').orderBy('ordem').get(),
+                    base.collection('grupos-domingo').orderBy('ordem').get(),
+                    base.collection('idosos').orderBy('ordem').get(),
+                    base.collection('acompanhantes').orderBy('ordem').get(),
+                    base.collection('dirigentes-sexta').orderBy('ordem').get()
+                ]);
+
+                const dirigentes = [], grupos = [], idosos = [], acompanhantes = [], dirSexta2 = [];
+                dirSnap.forEach(d => dirigentes.push(d.data().nome));
+                grpSnap.forEach(d => grupos.push(d.data().nome));
+                idoSnap.forEach(d => idosos.push(d.data().nome));
+                acoSnap.forEach(d => acompanhantes.push(d.data().nome));
+                sextaSnap2.forEach(d => dirSexta2.push(d.data().nome));
+
+                if (!dirigentes.length || !acompanhantes.length) {
+                    alert('❌ Cadastre ao menos um dirigente e um acompanhante.');
+                    return;
+                }
+
+                // Datas de início
+                const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+                const diasAteSab = (6 - hoje.getDay() + 7) % 7 || 7;
+                const dataInicio = new Date(hoje); dataInicio.setDate(hoje.getDate() + diasAteSab);
+                const diasAteSex = (5 - hoje.getDay() + 7) % 7 || 7;
+                const dataInicioSexta = new Date(hoje); dataInicioSexta.setDate(hoje.getDate() + diasAteSex);
+                dataInicioSexta.setHours(0, 0, 0, 0);
+
+                const anoAtual = new Date().getFullYear();
+                const dataInicioSabFinal   = ano > anoAtual ? new Date(ano, 0, 1) : dataInicio;
+                const dataInicioSextaFinal = ano > anoAtual ? new Date(ano, 0, 1) : dataInicioSexta;
+                const loopInicio = ano > anoAtual ? new Date(ano, 0, 1)
+                    : (dataInicioSexta < dataInicio ? dataInicioSexta : dataInicio);
+
+                const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+                // ✅ Ler último dado SALVO antes do próximo fim de semana para posição correta
+                const existingSnap = await (await programacaoCol()).doc(String(ano))
+                    .collection('agendamentos').get();
+                const ultimos = { sabado: null, idosos: null, domingo: null, sexta: null };
+                existingSnap.forEach(doc => {
+                    const sep   = doc.id.indexOf('_');
+                    const tipo  = doc.id.substring(0, sep);
+                    const data  = new Date(doc.id.substring(sep + 1) + 'T00:00:00');
+                    if (data >= dataInicioSabFinal) return;
+                    if (tipo === 'sabado'  && (!ultimos.sabado  || data > ultimos.sabado.data))  ultimos.sabado  = { data, ...doc.data() };
+                    if (tipo === 'idosos'  && (!ultimos.idosos  || data > ultimos.idosos.data))  ultimos.idosos  = { data, ...doc.data() };
+                    if (tipo === 'domingo' && (!ultimos.domingo || data > ultimos.domingo.data)) ultimos.domingo = { data, ...doc.data() };
+                    if (tipo === 'sexta'   && (!ultimos.sexta   || data > ultimos.sexta.data))   ultimos.sexta   = { data, ...doc.data() };
+                });
+
+                const proxIdx = (lista, nome) => {
+                    if (!lista.length) return 0;
+                    const i = lista.indexOf(nome);
+                    return i === -1 ? 0 : (i + 1) % lista.length;
+                };
+
+                let dirIdx    = ultimos.sabado  ? proxIdx(dirigentes,   ultimos.sabado.dirigente)    : 0;
+                let idoIdx    = ultimos.idosos  ? proxIdx(idosos,        ultimos.idosos.idoso)        : 0;
+                let acoIdx    = ultimos.idosos  ? proxIdx(acompanhantes, ultimos.idosos.acompanhante) : 0;
+                let grpIdx    = ultimos.domingo ? proxIdx(grupos,        ultimos.domingo.grupo)       : 0;
+                let sextaIdx2 = ultimos.sexta   ? proxIdx(dirSexta2,     ultimos.sexta.dirigente)     : 0;
+
+                // Preview de confirmação mostrando só o que será atualizado
+                let textoConfirm = `📋 O QUE SERÁ SALVO – ${ano}\n\n`;
+                let dTmp = new Date(dataInicio);
+                let dIdx = dirIdx, gIdx = grpIdx, iIdx = idoIdx, aIdx = acoIdx, sIdx = sextaIdx2;
+                for (let s = 0; s < 4; s++) {
+                    const sextaTmp = new Date(dTmp); sextaTmp.setDate(dTmp.getDate() - 1);
+                    if (salvarSexta && dirSexta2.length) {
+                        textoConfirm += `Sex ${sextaTmp.toLocaleDateString('pt-BR')}  🎙️ ${dirSexta2[sIdx]}\n`;
+                        sIdx = (sIdx + 1) % dirSexta2.length;
+                    }
+                    if (salvarSabado || salvarIdosos) {
+                        const acoTmp = (() => {
+                            let idx = aIdx;
+                            for (let t = 0; t < acompanhantes.length; t++) {
+                                if (acompanhantes[idx] !== dirigentes[dIdx]) return idx;
+                                idx = (idx + 1) % acompanhantes.length;
+                            }
+                            return aIdx;
+                        })();
+                        textoConfirm += `Sáb ${dTmp.toLocaleDateString('pt-BR')}`;
+                        if (salvarSabado) textoConfirm += `  🎤 ${dirigentes[dIdx]}`;
+                        if (salvarIdosos) textoConfirm += `  👴 ${idosos[iIdx % idosos.length] || '—'}  🤝 ${acompanhantes[acoTmp]}`;
+                        textoConfirm += '\n';
+                        dIdx = (dIdx + 1) % dirigentes.length;
+                        iIdx = idosos.length ? (iIdx + 1) % idosos.length : 0;
+                        aIdx = (acoTmp + 1) % acompanhantes.length;
+                    }
+                    if (salvarDom && grupos.length) {
+                        const dom = new Date(dTmp); dom.setDate(dom.getDate() + 1);
+                        textoConfirm += `Dom ${dom.toLocaleDateString('pt-BR')}  👥 ${grupos[gIdx]}\n`;
+                        gIdx = (gIdx + 1) % grupos.length;
+                    }
+                    textoConfirm += '\n';
+                    dTmp.setDate(dTmp.getDate() + 7);
+                }
+                textoConfirm += `...até o final de ${ano}.\n\nConfirmar?`;
+                if (!confirm(textoConfirm)) return;
+
+                // Salvar por mês (batch)
+                const refAgend = (await programacaoCol()).doc(String(ano)).collection('agendamentos');
+
+                for (let mes = loopInicio.getMonth(); mes < 12; mes++) {
+                    const batch = db.batch();
+                    const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+
+                    for (let dia = 1; dia <= diasNoMes; dia++) {
+                        const data = new Date(ano, mes, dia); data.setHours(0, 0, 0, 0);
+                        const dow = data.getDay();
+
+                        if (dow === 5 && data >= dataInicioSextaFinal && dirSexta2.length && salvarSexta) {
+                            batch.set(refAgend.doc(`sexta_${fmt(data)}`), { dirigente: dirSexta2[sextaIdx2] });
+                            sextaIdx2 = (sextaIdx2 + 1) % dirSexta2.length;
+                        }
+
+                        if (dow === 6 && data >= dataInicioSabFinal) {
+                            let acoReal = acoIdx;
+                            for (let t = 0; t < acompanhantes.length; t++) {
+                                if (acompanhantes[acoReal] !== dirigentes[dirIdx]) break;
+                                acoReal = (acoReal + 1) % acompanhantes.length;
+                            }
+                            if (salvarSabado) batch.set(refAgend.doc(`sabado_${fmt(data)}`), { dirigente: dirigentes[dirIdx] });
+                            if (salvarIdosos) batch.set(refAgend.doc(`idosos_${fmt(data)}`), {
+                                idoso: idosos.length ? idosos[idoIdx % idosos.length] : '',
+                                acompanhante: acompanhantes[acoReal]
+                            });
+                            dirIdx = (dirIdx + 1) % dirigentes.length;
+                            idoIdx = idosos.length ? (idoIdx + 1) % idosos.length : 0;
+                            acoIdx = (acoReal + 1) % acompanhantes.length;
+                        }
+
+                        if (dow === 0 && data >= dataInicioSabFinal && grupos.length && salvarDom) {
+                            batch.set(refAgend.doc(`domingo_${fmt(data)}`), { grupo: grupos[grpIdx % grupos.length] });
+                            grpIdx = (grpIdx + 1) % grupos.length;
+                        }
+                    }
+                    await batch.commit();
+                }
+
+                await (await escalaCol()).doc('estado-atual').set({
+                    dirigenteSabado: dirIdx, grupoDomingo: grpIdx,
+                    idoso: idoIdx, acompanhante: acoIdx,
+                    dirigenteSexta: sextaIdx2, ultimoAnoGerado: ano
+                });
+
+                // Gera a escala das linhas automáticas da Programação Semanal que
+                // usam listas de rotação novas (não uma das 5 legadas acima).
+                const listaIdsAtivos = new Set(
+                    [...document.querySelectorAll('.chk-lista-customizada:checked')].map(el => el.value)
+                );
+                await gerarLinhasAutoGenericas(ano, listaIdsAtivos);
+
+                alert(`✅ Escala de ${ano} salva com sucesso!`);
+                carregarEstado();
+                mostrarPreview();
+
+            } catch (error) {
+                console.error('Erro ao salvar escala:', error);
+                alert('❌ Erro ao salvar: ' + error.message);
+            }
+        }
+
+        // Gera/atualiza a escala das linhas automáticas de "Programação Semanal"
+        // que apontam para listas de rotação genéricas (qualquer dia, qualquer
+        // lista criada em "Listas Customizadas") — motor separado do legado
+        // acima, para não arriscar a lógica que já atende sexta/sábado/domingo.
+        async function gerarLinhasAutoGenericas(ano, listaIdsAtivos) {
+            const configDoc = await (await programacaoCol()).doc('config-semanal').get();
+            if (!configDoc.exists) return;
+
+            const linhas = (configDoc.data().linhas || []).filter(
+                l => l.fonte === 'auto' && l.listaId && !EscalaGenerica.isListaIdLegado(l.listaId)
+                    && (!listaIdsAtivos || listaIdsAtivos.has(l.listaId))
+            );
+            if (!linhas.length) return;
+
+            // Uma linha por listaId (se duas linhas usarem a mesma lista, a primeira manda)
+            const porListaId = new Map();
+            linhas.forEach(l => { if (!porListaId.has(l.listaId)) porListaId.set(l.listaId, l); });
+
+            const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+            const anoAtual = new Date().getFullYear();
+            const refAgend = (await programacaoCol()).doc(String(ano)).collection('agendamentos');
+            const existingSnap = await refAgend.get();
+            const existentesPorId = {};
+            existingSnap.forEach(doc => { existentesPorId[doc.id] = doc.data(); });
+
+            const indicesNovos = {};
+
+            for (const [listaId, linha] of porListaId) {
+                const itensSnap = await (await escalaCol()).doc('listas').collection(listaId).orderBy('ordem').get();
+                const nomes = [];
+                itensSnap.forEach(d => nomes.push(d.data().nome));
+                if (!nomes.length) continue;
+
+                const dowAlvo = (EscalaGenerica.DIA_OFFSET[linha.dia] + 1) % 7;
+                const diasAteAlvo = (dowAlvo - hoje.getDay() + 7) % 7 || 7;
+                const dataInicioLinha = new Date(hoje);
+                dataInicioLinha.setDate(hoje.getDate() + diasAteAlvo);
+                const dataInicioFinal = ano > anoAtual ? new Date(ano, 0, 1) : dataInicioLinha;
+
+                // Último nome usado antes do início, para saber o próximo índice
+                let ultimoNome = null, ultimaData = null;
+                Object.keys(existentesPorId).forEach(id => {
+                    if (!id.startsWith(`${listaId}_`)) return;
+                    const dataStr = id.substring(listaId.length + 1);
+                    const data = new Date(dataStr + 'T00:00:00');
+                    if (data >= dataInicioFinal) return;
+                    if (!ultimaData || data > ultimaData) { ultimaData = data; ultimoNome = existentesPorId[id].dirigente; }
+                });
+                let idx = EscalaGenerica.proximoIndice(nomes, ultimoNome);
+
+                for (let mes = dataInicioFinal.getMonth(); mes < 12; mes++) {
+                    const batch = db.batch();
+                    let algumaEscrita = false;
+                    const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+                    for (let dia = 1; dia <= diasNoMes; dia++) {
+                        const data = new Date(ano, mes, dia); data.setHours(0, 0, 0, 0);
+                        if (data.getDay() !== dowAlvo || data < dataInicioFinal) continue;
+                        const dataISO = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`;
+                        batch.set(refAgend.doc(EscalaGenerica.docIdGenerico(listaId, dataISO)), { dirigente: nomes[idx] });
+                        idx = (idx + 1) % nomes.length;
+                        algumaEscrita = true;
+                    }
+                    if (algumaEscrita) await batch.commit();
+                }
+
+                indicesNovos[listaId] = idx;
+            }
+
+            if (Object.keys(indicesNovos).length) {
+                const updates = {};
+                Object.entries(indicesNovos).forEach(([listaId, idx]) => { updates[`indices.${listaId}`] = idx; });
+                await (await escalaCol()).doc('estado-atual').update(updates);
+            }
+        }
+
+        // Reordenar lista após remoção
+        async function reordenarLista(tipo) {
+            const collectionName = collections[tipo];
+
+            const snapshot = await (await escalaCol())
+                .doc('listas')
+                .collection(collectionName)
+                .orderBy('ordem')
+                .get();
+
+            let ordem = 0;
+            const batch = db.batch();
+
+            snapshot.forEach(doc => {
+                batch.update(doc.ref, { ordem: ordem++ });
+            });
+
+            await batch.commit();
+        }
+
+        // Formatar data ISO (YYYY-MM-DD) para exibição BR (DD/MM/YYYY)
+        function formatarDataBR(dataISO) {
+            const [y, m, d] = dataISO.split('-');
+            return `${d}/${m}/${y}`;
+        }
+
+        // Toggle formulário de evento
+        function toggleEventoForm() {
+            const form = document.getElementById('add-form-eventos');
+            form.classList.toggle('active');
+            if (form.classList.contains('active')) {
+                document.getElementById('input-evento-descricao').value = '';
+                document.getElementById('input-evento-inicio').value = '';
+                document.getElementById('input-evento-fim').value = '';
+                document.getElementById('input-evento-descricao').focus();
+            }
+        }
+
+        // Carregar lista de eventos
+        async function carregarEventos() {
+            const container = document.getElementById('list-eventos');
+
+            try {
+                const snapshot = await (await escalaCol())
+                    .doc('listas')
+                    .collection('eventos-especiais')
+                    .orderBy('dataInicio')
+                    .get();
+
+                if (snapshot.empty) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            Nenhum evento cadastrado. Clique em "Adicionar" para começar.
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const periodo = data.dataInicio === data.dataFim
+                        ? formatarDataBR(data.dataInicio)
+                        : `${formatarDataBR(data.dataInicio)} a ${formatarDataBR(data.dataFim)}`;
+
+                    html += `
+                        <div class="list-item">
+                            <div class="list-item-info">
+                                <div class="list-item-name">
+                                    ${data.descricao}
+                                    <span style="font-weight:400;color:#6c757d;">(${periodo})</span>
+                                </div>
+                                <div style="font-size:0.78em;font-weight:600;color:${data.aplicado ? '#28a745' : '#856404'};">
+                                    ${data.aplicado ? '✅ Aplicado' : '⏳ Pendente'}
+                                </div>
+                            </div>
+                            <div class="list-item-actions">
+                                ${data.aplicado ? '' : `<button class="btn btn-success btn-sm" onclick="aplicarEvento('${doc.id}')">⚙️ Aplicar</button>`}
+                                ${data.aplicado ? '' : `<button class="btn btn-danger btn-sm" aria-label="Remover evento ${escAttr(data.descricao)}" onclick="removerEvento('${doc.id}', '${data.descricao}')">🗑️</button>`}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Erro ao carregar eventos:', error);
+                container.innerHTML = '<div class="empty-state">Erro ao carregar</div>';
+            }
+        }
+
+        // Adicionar evento
+        async function adicionarEvento() {
+            const descricao = document.getElementById('input-evento-descricao').value.trim();
+            const dataInicio = document.getElementById('input-evento-inicio').value;
+            let dataFim = document.getElementById('input-evento-fim').value;
+
+            if (!descricao || !dataInicio) {
+                alert('Preencha a descrição e a data de início');
+                return;
+            }
+            if (!dataFim) dataFim = dataInicio;
+            if (dataFim < dataInicio) {
+                alert('A data fim não pode ser anterior à data início');
+                return;
+            }
+
+            try {
+                await (await escalaCol())
+                    .doc('listas')
+                    .collection('eventos-especiais')
+                    .add({
+                        descricao,
+                        dataInicio,
+                        dataFim,
+                        aplicado: false,
+                        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                toggleEventoForm();
+                carregarEventos();
+                alert('✅ Evento cadastrado com sucesso!');
+            } catch (error) {
+                console.error('Erro ao adicionar evento:', error);
+                alert('❌ Erro ao adicionar: ' + error.message);
+            }
+        }
+
+        // Remover evento (apenas pendentes)
+        async function removerEvento(docId, descricao) {
+            if (!confirm(`Tem certeza que deseja remover o evento "${descricao}"?`)) {
+                return;
+            }
+
+            try {
+                await (await escalaCol())
+                    .doc('listas')
+                    .collection('eventos-especiais')
+                    .doc(docId)
+                    .delete();
+
+                carregarEventos();
+                alert('✅ Evento removido com sucesso!');
+            } catch (error) {
+                console.error('Erro ao remover evento:', error);
+                alert('❌ Erro ao remover: ' + error.message);
+            }
+        }
+
+        // Aplicar evento: substitui as pessoas nas datas do evento e empurra o resto em cascata
+        async function aplicarEvento(eventoId) {
+            try {
+                const eventosRef = (await escalaCol()).doc('listas').collection('eventos-especiais');
+                const eventoDoc = await eventosRef.doc(eventoId).get();
+
+                if (!eventoDoc.exists) {
+                    alert('❌ Evento não encontrado.');
+                    return;
+                }
+
+                const evento = eventoDoc.data();
+
+                if (evento.aplicado) {
+                    alert('Este evento já foi aplicado anteriormente.');
+                    return;
+                }
+
+                const ano = parseInt(evento.dataInicio.substring(0, 4));
+                const cutoff = evento.dataInicio;
+
+                // Carregar todos os eventos cadastrados (conjunto completo de datas a pular)
+                const eventosSnap = await eventosRef.get();
+                const todosEventos = [];
+                eventosSnap.forEach(doc => todosEventos.push(doc.data()));
+
+                // Carregar listas de rotação
+                const base = (await escalaCol()).doc('listas');
+                const [dirSnap, grpSnap, idoSnap, acoSnap, sextaSnap] = await Promise.all([
+                    base.collection('dirigentes-sabado').orderBy('ordem').get(),
+                    base.collection('grupos-domingo').orderBy('ordem').get(),
+                    base.collection('idosos').orderBy('ordem').get(),
+                    base.collection('acompanhantes').orderBy('ordem').get(),
+                    base.collection('dirigentes-sexta').orderBy('ordem').get()
+                ]);
+
+                const dirigentes = [], grupos = [], idosos = [], acompanhantes = [], dirSexta = [];
+                dirSnap.forEach(d => dirigentes.push(d.data().nome));
+                grpSnap.forEach(d => grupos.push(d.data().nome));
+                idoSnap.forEach(d => idosos.push(d.data().nome));
+                acoSnap.forEach(d => acompanhantes.push(d.data().nome));
+                sextaSnap.forEach(d => dirSexta.push(d.data().nome));
+
+                if (!dirigentes.length || !acompanhantes.length) {
+                    alert('❌ Cadastre ao menos um dirigente e um acompanhante antes de aplicar eventos.');
+                    return;
+                }
+
+                // Carregar tudo que já está salvo neste ano
+                const refAgend = (await programacaoCol()).doc(String(ano)).collection('agendamentos');
+                const agendSnap = await refAgend.get();
+                const docsExistentes = {};
+                agendSnap.forEach(doc => { docsExistentes[doc.id] = doc.data(); });
+
+                // Determinar quais categorias esta congregação já usa (mesma ideia dos
+                // checkboxes de "Salvar no Firebase"): só continua gerando uma categoria
+                // se já existe pelo menos um documento dela neste ano. Se ainda não existe
+                // NADA salvo neste ano, não restringe nada (primeira geração).
+                const temDadosExistentes = Object.keys(docsExistentes).length > 0;
+                const roleAtivo = {
+                    sexta:   !temDadosExistentes || Object.keys(docsExistentes).some(id => id.startsWith('sexta_')),
+                    sabado:  !temDadosExistentes || Object.keys(docsExistentes).some(id => id.startsWith('sabado_')),
+                    idosos:  !temDadosExistentes || Object.keys(docsExistentes).some(id => id.startsWith('idosos_')),
+                    domingo: !temDadosExistentes || Object.keys(docsExistentes).some(id => id.startsWith('domingo_'))
+                };
+
+                // Encontrar a última atribuição válida (não-evento) antes do corte, por função
+                const ultimos = { sabado: null, idosos: null, domingo: null, sexta: null };
+                Object.keys(docsExistentes).forEach(id => {
+                    const sep = id.indexOf('_');
+                    const tipo = id.substring(0, sep);
+                    const dataStr = id.substring(sep + 1);
+                    const d = docsExistentes[id];
+                    if (dataStr >= cutoff || d.evento) return;
+                    if (tipo === 'sabado'  && (!ultimos.sabado  || dataStr > ultimos.sabado.dataStr))  ultimos.sabado  = { dataStr, dirigente: d.dirigente };
+                    if (tipo === 'idosos'  && (!ultimos.idosos  || dataStr > ultimos.idosos.dataStr))  ultimos.idosos  = { dataStr, idoso: d.idoso, acompanhante: d.acompanhante };
+                    if (tipo === 'domingo' && (!ultimos.domingo || dataStr > ultimos.domingo.dataStr)) ultimos.domingo = { dataStr, grupo: d.grupo };
+                    if (tipo === 'sexta'   && (!ultimos.sexta   || dataStr > ultimos.sexta.dataStr))   ultimos.sexta   = { dataStr, dirigente: d.dirigente };
+                });
+
+                const proxIdx = (lista, nome) => {
+                    if (!lista.length) return 0;
+                    const i = lista.indexOf(nome);
+                    return i === -1 ? 0 : (i + 1) % lista.length;
+                };
+
+                let dirIdx   = ultimos.sabado  ? proxIdx(dirigentes,   ultimos.sabado.dirigente)    : 0;
+                let idoIdx   = ultimos.idosos  ? proxIdx(idosos,        ultimos.idosos.idoso)        : 0;
+                let acoIdx   = ultimos.idosos  ? proxIdx(acompanhantes, ultimos.idosos.acompanhante) : 0;
+                let grpIdx   = ultimos.domingo ? proxIdx(grupos,        ultimos.domingo.grupo)       : 0;
+                let sextaIdx = ultimos.sexta   ? proxIdx(dirSexta,      ultimos.sexta.dirigente)     : 0;
+
+                // Montar preview textual a partir do corte (até 10 linhas)
+                const [cy, cm, cd] = cutoff.split('-').map(Number);
+                const dataInicioLoop = new Date(cy, cm - 1, cd);
+                let textoPreview = `📋 APLICANDO EVENTO: ${evento.descricao}\n\n`;
+                let linhas = 0;
+                let dTmp = dirIdx, gTmp = grpIdx, iTmp = idoIdx, aTmp = acoIdx, sTmp = sextaIdx;
+
+                for (let mes = dataInicioLoop.getMonth(); mes < 12 && linhas < 10; mes++) {
+                    const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+                    for (let dia = 1; dia <= diasNoMes && linhas < 10; dia++) {
+                        const data = new Date(ano, mes, dia);
+                        if (data < dataInicioLoop) continue;
+                        const dataStrISO = EventosEscala.formatarDataISO(data);
+                        const dow = data.getDay();
+                        const nomeEvento = EventosEscala.eventoParaData(dataStrISO, todosEventos);
+
+                        if (dow === 5 && dirSexta.length && roleAtivo.sexta) {
+                            textoPreview += nomeEvento
+                                ? `Sex ${data.toLocaleDateString('pt-BR')}  🎪 ${nomeEvento}\n`
+                                : `Sex ${data.toLocaleDateString('pt-BR')}  🎙️ ${dirSexta[sTmp]}\n`;
+                            if (!nomeEvento) sTmp = (sTmp + 1) % dirSexta.length;
+                            linhas++;
+                        }
+                        if (dow === 6 && roleAtivo.sabado) {
+                            textoPreview += nomeEvento
+                                ? `Sáb ${data.toLocaleDateString('pt-BR')}  🎪 ${nomeEvento}\n`
+                                : `Sáb ${data.toLocaleDateString('pt-BR')}  🎤 ${dirigentes[dTmp]}\n`;
+                            if (!nomeEvento) {
+                                dTmp = (dTmp + 1) % dirigentes.length;
+                                iTmp = idosos.length ? (iTmp + 1) % idosos.length : 0;
+                                aTmp = (aTmp + 1) % acompanhantes.length;
+                            }
+                            linhas++;
+                        }
+                        if (dow === 0 && grupos.length && roleAtivo.domingo) {
+                            textoPreview += nomeEvento
+                                ? `Dom ${data.toLocaleDateString('pt-BR')}  🎪 ${nomeEvento}\n`
+                                : `Dom ${data.toLocaleDateString('pt-BR')}  👥 ${grupos[gTmp]}\n`;
+                            if (!nomeEvento) gTmp = (gTmp + 1) % grupos.length;
+                            linhas++;
+                        }
+                    }
+                }
+                textoPreview += `\n...até o final de ${ano}.\n\nConfirmar aplicação?`;
+
+                if (!confirm(textoPreview)) return;
+
+                // Apagar tudo que será regerado (a partir do corte)
+                const idsParaApagar = Object.keys(docsExistentes).filter(id => id.substring(id.indexOf('_') + 1) >= cutoff);
+                for (let i = 0; i < idsParaApagar.length; i += 400) {
+                    const chunk = idsParaApagar.slice(i, i + 400);
+                    const batchDel = db.batch();
+                    chunk.forEach(id => batchDel.delete(refAgend.doc(id)));
+                    await batchDel.commit();
+                }
+
+                // Regerar dia a dia, pulando datas de evento
+                for (let mes = dataInicioLoop.getMonth(); mes < 12; mes++) {
+                    const batch = db.batch();
+                    const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+
+                    for (let dia = 1; dia <= diasNoMes; dia++) {
+                        const data = new Date(ano, mes, dia);
+                        if (data < dataInicioLoop) continue;
+                        const dataStrISO = EventosEscala.formatarDataISO(data);
+                        const dow = data.getDay();
+                        const nomeEvento = EventosEscala.eventoParaData(dataStrISO, todosEventos);
+
+                        if (dow === 5 && dirSexta.length && roleAtivo.sexta) {
+                            if (nomeEvento) {
+                                batch.set(refAgend.doc(`sexta_${dataStrISO}`), { evento: nomeEvento });
+                            } else {
+                                batch.set(refAgend.doc(`sexta_${dataStrISO}`), { dirigente: dirSexta[sextaIdx] });
+                                sextaIdx = (sextaIdx + 1) % dirSexta.length;
+                            }
+                        }
+
+                        if (dow === 6) {
+                            if (nomeEvento) {
+                                if (roleAtivo.sabado) batch.set(refAgend.doc(`sabado_${dataStrISO}`), { evento: nomeEvento });
+                                if (roleAtivo.idosos) batch.set(refAgend.doc(`idosos_${dataStrISO}`), { evento: nomeEvento });
+                            } else {
+                                let acoReal = acoIdx;
+                                for (let t = 0; t < acompanhantes.length; t++) {
+                                    if (acompanhantes[acoReal] !== dirigentes[dirIdx]) break;
+                                    acoReal = (acoReal + 1) % acompanhantes.length;
+                                }
+                                if (roleAtivo.sabado) batch.set(refAgend.doc(`sabado_${dataStrISO}`), { dirigente: dirigentes[dirIdx] });
+                                if (roleAtivo.idosos) batch.set(refAgend.doc(`idosos_${dataStrISO}`), {
+                                    idoso: idosos.length ? idosos[idoIdx % idosos.length] : '',
+                                    acompanhante: acompanhantes[acoReal]
+                                });
+                                dirIdx = (dirIdx + 1) % dirigentes.length;
+                                idoIdx = idosos.length ? (idoIdx + 1) % idosos.length : 0;
+                                acoIdx = (acoReal + 1) % acompanhantes.length;
+                            }
+                        }
+
+                        if (dow === 0 && grupos.length && roleAtivo.domingo) {
+                            if (nomeEvento) {
+                                batch.set(refAgend.doc(`domingo_${dataStrISO}`), { evento: nomeEvento });
+                            } else {
+                                batch.set(refAgend.doc(`domingo_${dataStrISO}`), { grupo: grupos[grpIdx % grupos.length] });
+                                grpIdx = (grpIdx + 1) % grupos.length;
+                            }
+                        }
+                    }
+                    await batch.commit();
+                }
+
+                // Atualizar estado atual
+                await (await escalaCol()).doc('estado-atual').set({
+                    dirigenteSabado: dirIdx, grupoDomingo: grpIdx,
+                    idoso: idoIdx, acompanhante: acoIdx,
+                    dirigenteSexta: sextaIdx, ultimoAnoGerado: ano
+                }, { merge: true });
+
+                // Marcar como aplicados todos os eventos pendentes cobertos por esta regeração
+                const batchEventos = db.batch();
+                eventosSnap.forEach(doc => {
+                    const d = doc.data();
+                    if (!d.aplicado && d.dataInicio >= cutoff && d.dataInicio.substring(0, 4) === String(ano)) {
+                        batchEventos.update(doc.ref, { aplicado: true });
+                    }
+                });
+                await batchEventos.commit();
+
+                // Mesma ideia acima, para as linhas automáticas de listas genéricas.
+                // A exclusão dos docs a partir do corte já aconteceu no loop
+                // "idsParaApagar" acima (ele não filtra por prefixo — apaga
+                // qualquer doc de agendamentos na data, legado ou genérico).
+                await aplicarEventoGenerico(ano, dataInicioLoop, cutoff, todosEventos, docsExistentes);
+
+                alert(`✅ Evento "${evento.descricao}" aplicado com sucesso! Escala atualizada.`);
+                carregarEventos();
+                carregarEstado();
+                mostrarPreview();
+
+            } catch (error) {
+                console.error('Erro ao aplicar evento:', error);
+                alert('❌ Erro ao aplicar evento: ' + error.message);
+            }
+        }
+
+        // Equivalente genérico do bloco dow===5/6/0 dentro de aplicarEvento(),
+        // para linhas automáticas que usam listas de rotação novas.
+        async function aplicarEventoGenerico(ano, dataInicioLoop, cutoff, todosEventos, docsExistentesAntes) {
+            const configDoc = await (await programacaoCol()).doc('config-semanal').get();
+            if (!configDoc.exists) return;
+
+            const linhas = (configDoc.data().linhas || []).filter(
+                l => l.fonte === 'auto' && l.listaId && !EscalaGenerica.isListaIdLegado(l.listaId)
+            );
+            if (!linhas.length) return;
+
+            const porListaId = new Map();
+            linhas.forEach(l => { if (!porListaId.has(l.listaId)) porListaId.set(l.listaId, l); });
+
+            const refAgend = (await programacaoCol()).doc(String(ano)).collection('agendamentos');
+            const indicesNovos = {};
+
+            // Mesma ideia do `roleAtivo` do bloco legado: se já existe algo salvo
+            // neste ano, só continua listas que já têm pelo menos um doc; se ainda
+            // não existe nada, é a primeira geração e todas valem.
+            const temDadosExistentes = Object.keys(docsExistentesAntes).length > 0;
+
+            for (const [listaId, linha] of porListaId) {
+                const ativaParaEssaLista = !temDadosExistentes
+                    || Object.keys(docsExistentesAntes).some(id => id.startsWith(`${listaId}_`));
+                if (!ativaParaEssaLista) continue;
+
+                const itensSnap = await (await escalaCol()).doc('listas').collection(listaId).orderBy('ordem').get();
+                const nomes = [];
+                itensSnap.forEach(d => nomes.push(d.data().nome));
+                if (!nomes.length) continue;
+
+                const dowAlvo = (EscalaGenerica.DIA_OFFSET[linha.dia] + 1) % 7;
+
+                // Último nome válido (não-evento) antes do corte
+                let ultimoNome = null, ultimaData = null;
+                Object.keys(docsExistentesAntes).forEach(id => {
+                    if (!id.startsWith(`${listaId}_`)) return;
+                    const dataStr = id.substring(listaId.length + 1);
+                    const d = docsExistentesAntes[id];
+                    if (dataStr >= cutoff || d.evento) return;
+                    if (!ultimaData || dataStr > ultimaData) { ultimaData = dataStr; ultimoNome = d.dirigente; }
+                });
+                let idx = EscalaGenerica.proximoIndice(nomes, ultimoNome);
+
+                for (let mes = dataInicioLoop.getMonth(); mes < 12; mes++) {
+                    const batch = db.batch();
+                    let algumaEscrita = false;
+                    const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+                    for (let dia = 1; dia <= diasNoMes; dia++) {
+                        const data = new Date(ano, mes, dia);
+                        if (data < dataInicioLoop || data.getDay() !== dowAlvo) continue;
+                        const dataISO = EventosEscala.formatarDataISO(data);
+                        const nomeEvento = EventosEscala.eventoParaData(dataISO, todosEventos);
+                        const docId = EscalaGenerica.docIdGenerico(listaId, dataISO);
+                        if (nomeEvento) {
+                            batch.set(refAgend.doc(docId), { evento: nomeEvento });
+                        } else {
+                            batch.set(refAgend.doc(docId), { dirigente: nomes[idx] });
+                            idx = (idx + 1) % nomes.length;
+                        }
+                        algumaEscrita = true;
+                    }
+                    if (algumaEscrita) await batch.commit();
+                }
+
+                indicesNovos[listaId] = idx;
+            }
+
+            if (Object.keys(indicesNovos).length) {
+                const updates = {};
+                Object.entries(indicesNovos).forEach(([listaId, idx]) => { updates[`indices.${listaId}`] = idx; });
+                await (await escalaCol()).doc('estado-atual').update(updates);
+            }
+        }
+    </script>
+</body>
+</html>

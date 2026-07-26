@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Foulario S_13</title>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.13/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="css/S_13.css" />
+    <script src="js/Firebaseconfig.js"></script>
+    <script src="js/CongregacaoUtils.js"></script>
+    <script src="js/Tenant.js"></script>
+  </head>
+  <body>
+
+    <h2>REGISTRO DE DESIGNAÇÃO DE TERRITÓRIO</h2>
+    <div id="yearControls">
+      <button id="prevYearBtn">Ano Anterior</button>
+      <span id="serviceYear"></span>
+      <button id="nextYearBtn">Próximo Ano</button>
+      <button><a href="Painel/painel.html" class="button">Voltar</a></button>
+      <button id="generatePdfBtn">Gerar PDF</button>
+    </div>
+
+    <!-- Navegação de abas -->
+    <div id="tab-nav">
+      <button id="tab-btn-mapa" class="tab-btn tab-btn-active" onclick="mostrarAba('por-mapa')">Por Mapa</button>
+      <button id="tab-btn-grupo" class="tab-btn" onclick="mostrarAba('por-grupo')">Por Grupo</button>
+    </div>
+
+    <!-- Aba: Por Mapa (existente) -->
+    <div id="view-por-mapa">
+      <table id="territoryTable">
+        <thead>
+          <tr>
+            <th rowspan="2">Terr. n.º</th>
+            <th rowspan="2">Última data concluída</th>
+            <th colspan="2">Designado para</th>
+            <th colspan="2">Designado para</th>
+            <th colspan="2">Designado para</th>
+            <th colspan="2">Designado para</th>
+          </tr>
+          <tr>
+            <th>Data da designação</th>
+            <th>Data da conclusão</th>
+            <th>Data da designação</th>
+            <th>Data da conclusão</th>
+            <th>Data da designação</th>
+            <th>Data da conclusão</th>
+            <th>Data da designação</th>
+            <th>Data da conclusão</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Preenchido pelo JavaScript -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Aba: Por Grupo (nova) -->
+    <div id="view-por-grupo" style="display:none;">
+      <!-- Preenchido pelo JavaScript -->
+    </div>
+    <script src="js/S_13.js"></script>
+    <script src="js/generatePdf.js"></script>
+  </body>
+</html>
