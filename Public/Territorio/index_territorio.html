@@ -20,14 +20,7 @@
     <script src="../js/Tenant.js"></script>
     <script src="../Painel/escala-generica.js"></script>
     <script>
-      // O Service Worker só é registrado em Public/index.html; quando ele
-      // detecta uma versão nova de sw.js, ativa em segundo plano
-      // (skipWaiting + clients.claim), mas ESTA aba continua rodando com os
-      // scripts que já tinha carregado até a próxima navegação. Sem isso,
-      // se essa próxima navegação não passar de novo por index.html (onde
-      // fica o confirm() que força reload), esta página podia ficar presa
-      // servindo scripts antigos em cache por mais um ciclo inteiro —
-      // recarrega sozinha, uma única vez, assim que o novo SW assumir.
+        
       if ('serviceWorker' in navigator) {
         let jaRecarregou = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {

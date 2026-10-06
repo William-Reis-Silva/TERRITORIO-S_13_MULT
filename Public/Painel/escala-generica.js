@@ -81,6 +81,18 @@ function prefixoDocParaListaId(listaId) {
   return PREFIXO_DOC_LEGADO[listaId] || listaId;
 }
 
+// O motor legado só grava a lista legada no dia nativo dela (o prefixo do
+// doc é o próprio nome do dia). Uma linha que usa a lista legada em outro dia
+// (ex: "Dirigentes de Sexta" na terça) é gerada pelo motor genérico, com docId
+// `${listaId}_${data}` — geradores e leitores precisam decidir pelo par (lista, dia).
+function usaMotorLegado(listaId, dia) {
+  return PREFIXO_DOC_LEGADO[listaId] === dia;
+}
+
+function prefixoDocParaLinha(linha) {
+  return usaMotorLegado(linha.listaId, linha.dia) ? PREFIXO_DOC_LEGADO[linha.listaId] : linha.listaId;
+}
+
 // lista: array de nomes (ordenado). ultimoNome: último nome usado antes do corte, ou null/undefined.
 // Mesma lógica do `proxIdx` inline em gerenciamento_escala.html (gerarESalvarEscala/aplicarEvento).
 function proximoIndice(lista, ultimoNome) {
@@ -100,6 +112,8 @@ const EscalaGenerica = {
   proximoIndice,
   PREFIXO_DOC_LEGADO,
   prefixoDocParaListaId,
+  usaMotorLegado,
+  prefixoDocParaLinha,
 };
 
 if (typeof module !== 'undefined' && module.exports) {

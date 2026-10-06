@@ -160,7 +160,7 @@
                 <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
                     <select id="ano-escala" class="btn btn-secondary btn-sm" style="cursor:pointer;font-size:0.85em;" aria-label="Ano da escala"></select>
                     <button class="btn btn-primary btn-sm" onclick="mostrarPreview()">🔄 Preview</button>
-                    <button class="btn btn-success btn-sm" onclick="gerarESalvarEscala()">💾 Salvar no Firebase</button>
+                    <button class="btn btn-success btn-sm" onclick="gerarESalvarEscala()">💾 Salvar no Banco de Dados</button>
                 </div>
             </div>
             <div class="salvar-opcoes" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 4px 4px;font-size:0.83em;color:#495057;">
@@ -1069,10 +1069,28 @@ uma lista chamada "Domingo" será criada automaticamente e poderá ser usada em 
                     snap.forEach(doc => { snapsPorAno[ano][doc.id] = doc.data(); });
                 }));
 
+                // Linhas automáticas da Programação Semanal geradas pelo motor
+                // genérico (qualquer dia) — o bloco fixo abaixo só cobre sex/sáb/dom.
+                const configDoc = await (await programacaoCol()).doc('config-semanal').get();
+                const linhasGenericas = (configDoc.exists ? (configDoc.data().linhas || []) : []).filter(
+                    l => l.fonte === 'auto' && l.listaId && !EscalaGenerica.usaMotorLegado(l.listaId, l.dia)
+                );
+
                 // Montar resultado
                 const resultado = semanas.map(s => {
                     const ano = s.sabado.getFullYear();
                     const docs = snapsPorAno[ano] || {};
+                    const segunda = new Date(s.sexta); segunda.setDate(s.sexta.getDate() - 4);
+                    const genericas = linhasGenericas.map(l => {
+                        const data = EscalaGenerica.proximaDataParaDia(segunda, l.dia);
+                        const doc = (snapsPorAno[data.getFullYear()] || {})[`${EscalaGenerica.prefixoDocParaLinha(l)}_${fmt(data)}`];
+                        return {
+                            offset: EscalaGenerica.DIA_OFFSET[l.dia],
+                            label: `${EscalaGenerica.DIA_LABELS[l.dia].slice(0, 3)} ${data.toLocaleDateString('pt-BR')}`,
+                            modalidade: l.modalidade,
+                            nome: doc ? (doc.evento || doc.dirigente || doc.grupo) : null
+                        };
+                    }).sort((a, b) => a.offset - b.offset);
                     const sextaDoc = docs[`sexta_${fmt(s.sexta)}`]   || null;
                     const sabDoc   = docs[`sabado_${fmt(s.sabado)}`]  || null;
                     const idoDoc   = docs[`idosos_${fmt(s.sabado)}`]  || null;
@@ -1087,7 +1105,8 @@ uma lista chamada "Domingo" será criada automaticamente e poderá ser usada em 
                         idoso:           idoDoc   ? idoDoc.idoso       : null,
                         acompanhante:    idoDoc   ? idoDoc.acompanhante: null,
                         grupo:           domDoc   ? domDoc.grupo       : null,
-                        agendado:        !!(sabDoc || domDoc)
+                        genericas,
+                        agendado:        !!(sabDoc || domDoc || genericas.some(g => g.nome))
                     };
                 });
 
@@ -1105,8 +1124,14 @@ uma lista chamada "Domingo" será criada automaticamente e poderá ser usada em 
                 }
 
                 html += '<div class="preview-list">';
+                const linhaGenerica = g => `<div class="preview-row">
+                        <span class="preview-data">📅 ${escAttr(g.label)}</span>
+                        ${g.nome ? `<span class="preview-pessoa">🔁 ${escAttr(g.nome)}</span>` : '<span class="preview-pessoa" style="opacity:.5">🔁 — (não gerado)</span>'}
+                        <span class="preview-pessoa" style="opacity:.7">${escAttr(g.modalidade)}</span>
+                    </div>`;
                 resultado.forEach(s => {
                     html += `<div class="preview-semana">`;
+                    html += s.genericas.filter(g => g.offset < 4).map(linhaGenerica).join('');
                     if (s.dirigenteSexta) {
                         html += `<div class="preview-row sexta-row">
                             <span class="preview-data">📅 Sex ${s.sexta}</span>
@@ -1123,6 +1148,7 @@ uma lista chamada "Domingo" será criada automaticamente e poderá ser usada em 
                         <span class="preview-data">📅 Dom ${s.domingo}</span>
                         ${s.grupo ? `<span class="preview-pessoa">👥 ${s.grupo}</span>` : '<span class="preview-pessoa" style="opacity:.5">👥 —</span>'}
                     </div>
+                    ${s.genericas.filter(g => g.offset >= 4).map(linhaGenerica).join('')}
                     </div>`;
                 });
                 html += '</div>';
@@ -1322,8 +1348,8 @@ uma lista chamada "Domingo" será criada automaticamente e poderá ser usada em 
             if (!configDoc.exists) return;
 
             const linhas = (configDoc.data().linhas || []).filter(
-                l => l.fonte === 'auto' && l.listaId && !EscalaGenerica.isListaIdLegado(l.listaId)
-                    && (!listaIdsAtivos || listaIdsAtivos.has(l.listaId))
+                l => l.fonte === 'auto' && l.listaId && !EscalaGenerica.usaMotorLegado(l.listaId, l.dia)
+                    && (!listaIdsAtivos || EscalaGenerica.isListaIdLegado(l.listaId) || listaIdsAtivos.has(l.listaId))
             );
             if (!linhas.length) return;
 
@@ -1780,7 +1806,7 @@ uma lista chamada "Domingo" será criada automaticamente e poderá ser usada em 
             if (!configDoc.exists) return;
 
             const linhas = (configDoc.data().linhas || []).filter(
-                l => l.fonte === 'auto' && l.listaId && !EscalaGenerica.isListaIdLegado(l.listaId)
+                l => l.fonte === 'auto' && l.listaId && !EscalaGenerica.usaMotorLegado(l.listaId, l.dia)
             );
             if (!linhas.length) return;
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = "arranjo-campo-v1.5.2";
+const CACHE_NAME = "arranjo-campo-v1.5.4";
 
 const FILES_TO_CACHE = [
   "./index.html",
@@ -90,6 +90,9 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   const url = new URL(event.request.url);
+
+  // Cache API só aceita http(s) — ex.: chrome-extension:// faria cache.put falhar
+  if (url.protocol !== "http:" && url.protocol !== "https:") return;
 
   // Não interceptar requisições Firebase / Google APIs (precisam de rede)
   if (

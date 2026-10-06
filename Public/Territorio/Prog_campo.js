@@ -310,7 +310,7 @@ async function montarLinhaHtml(congId, ano, segunda, linha) {
 async function buscarDirigenteAuto(congId, ano, segunda, linha) {
   try {
     const data = EscalaGenerica.proximaDataParaDia(segunda, linha.dia);
-    const prefixo = EscalaGenerica.prefixoDocParaListaId(linha.listaId);
+    const prefixo = EscalaGenerica.prefixoDocParaLinha(linha);
 
     const doc = await Tenant.collectionSync(congId, "programacao")
       .doc(String(ano))
@@ -321,7 +321,8 @@ async function buscarDirigenteAuto(congId, ano, segunda, linha) {
     if (!doc.exists) return "-";
 
     const d = doc.data();
-    return d.evento || d.dirigente || "-";
+    // grupos-domingo grava o nome em `grupo`, não em `dirigente`
+    return d.evento || d.dirigente || d.grupo || "-";
   } catch (error) {
     console.error("❌ Erro ao buscar dirigente automático:", error);
     return "Erro";

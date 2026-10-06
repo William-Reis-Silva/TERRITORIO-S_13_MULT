@@ -267,7 +267,9 @@ document.getElementById("config-form").addEventListener("submit", async (e) => {
 });
 
 // Configurar formulário de designação (ATUALIZADO)
-document.getElementById("gerenciar-form").addEventListener("submit", async (e) => {
+// `?.`: painel.html não tem #gerenciar-form; sem isso a exceção aborta o
+// resto do script (exports em window e listener de #mapa-foto).
+document.getElementById("gerenciar-form")?.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const congId = await Tenant.resolverCongId();

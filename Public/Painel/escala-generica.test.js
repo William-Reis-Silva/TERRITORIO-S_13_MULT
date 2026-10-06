@@ -11,6 +11,8 @@ const {
   proximoIndice,
   PREFIXO_DOC_LEGADO,
   prefixoDocParaListaId,
+  usaMotorLegado,
+  prefixoDocParaLinha,
 } = require('./escala-generica.js');
 
 test('DIA_LABELS tem uma entrada para cada chave de DIA_OFFSET', () => {
@@ -102,4 +104,17 @@ test('proximoIndice avança para o próximo da lista', () => {
 
 test('proximoIndice dá a volta (wrap) no último nome da lista', () => {
   assert.equal(proximoIndice(['Ana', 'Bruno', 'Carlos'], 'Carlos'), 0);
+});
+
+test('usaMotorLegado só vale para lista legada no próprio dia dela', () => {
+  assert.equal(usaMotorLegado('dirigentes-sexta', 'sexta'), true);
+  assert.equal(usaMotorLegado('grupos-domingo', 'domingo'), true);
+  assert.equal(usaMotorLegado('dirigentes-sexta', 'terca'), false);
+  assert.equal(usaMotorLegado('dirigentes-terca', 'terca'), false);
+});
+
+test('prefixoDocParaLinha usa o prefixo legado só no dia nativo da lista', () => {
+  assert.equal(prefixoDocParaLinha({ listaId: 'dirigentes-sexta', dia: 'sexta' }), 'sexta');
+  assert.equal(prefixoDocParaLinha({ listaId: 'dirigentes-sexta', dia: 'terca' }), 'dirigentes-sexta');
+  assert.equal(prefixoDocParaLinha({ listaId: 'dirigentes-terca', dia: 'terca' }), 'dirigentes-terca');
 });
