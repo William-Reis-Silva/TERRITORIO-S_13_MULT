@@ -143,6 +143,11 @@ async function buscarGruposSequenciaveis() {
   return _gruposCache;
 }
 
+function vezesHtml(vezes) {
+  if (!vezes) return `<span class="sg-vezes-zero">—</span>`;
+  return `<span class="sg-badge ${vezes > 1 ? "sg-vezes--repetido" : "sg-concluido"}">${vezes}×</span>`;
+}
+
 // ── Renderização: Por Grupo ──
 async function renderPorGrupo() {
   const container = document.getElementById("view-por-grupo");
@@ -173,6 +178,15 @@ async function renderPorGrupo() {
 
     registrosGrupo.sort((a, b) => new Date(a.dataInicio) - new Date(b.dataInicio));
 
+    // Quantas vezes cada mapa foi concluído pelo grupo neste ano de serviço
+    // (conta pela data de conclusão, não pela de início).
+    const conclusoesPorMapa = new Map();
+    for (const r of registrosGrupo) {
+      if (!r.dataConclusao) continue;
+      const fim = new Date(r.dataConclusao);
+      if (fim < start || fim > end) continue;
+      conclusoesPorMapa.set(r.mapaNum, (conclusoesPorMapa.get(r.mapaNum) || 0) + 1);
+    }
     html += `<div class="grupo-section">
       <h3 class="grupo-title">${grupo}
         <span class="grupo-count">${registrosGrupo.length} designação(ões)</span>
@@ -182,12 +196,13 @@ async function renderPorGrupo() {
           <tr>
             <th>#</th><th>Mapa</th><th>Bairro</th>
             <th>Data de Início</th><th>Data de Conclusão</th><th>Status</th>
+            <th title="Quantas vezes o grupo concluiu este mapa no ano de serviço">Vezes concluído</th>
           </tr>
         </thead>
         <tbody>`;
 
     if (registrosGrupo.length === 0) {
-      html += `<tr><td colspan="6" class="grupo-vazio">Nenhuma designação neste ano de serviço</td></tr>`;
+      html += `<tr><td colspan="7" class="grupo-vazio">Nenhuma designação neste ano de serviço</td></tr>`;
     } else {
       registrosGrupo.forEach((r, idx) => {
         const concluido = !!r.dataConclusao;
@@ -200,6 +215,7 @@ async function renderPorGrupo() {
           <td>${formatDate(r.dataInicio)}</td>
           <td>${formatDate(r.dataConclusao)}</td>
           <td><span class="sg-badge ${statusCls}">${statusTxt}</span></td>
+          <td class="sg-vezes">${vezesHtml(conclusoesPorMapa.get(r.mapaNum) || 0)}</td>
         </tr>`;
       });
     }

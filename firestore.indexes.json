@@ -7,6 +7,14 @@
         { "fieldPath": "designadoPara", "order": "ASCENDING" },
         { "fieldPath": "dataInicio", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "designacoes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "designadoPara", "order": "ASCENDING" },
+        { "fieldPath": "dataInicio", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

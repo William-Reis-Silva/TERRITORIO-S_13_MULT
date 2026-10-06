@@ -63,7 +63,15 @@
     font-size: 14px;
     color: blue;
     font-weight: bold;
+    background-color: white;
 
+}
+
+/* A página declara color-scheme "light dark": no modo escuro do sistema o
+   navegador desenha o ícone nativo do calendário em branco, invisível sobre
+   o fundo branco do campo. Força o tema claro só nesses campos. */
+#formEdicao input[type="date"] {
+    color-scheme: light;
 }
 
 #formEdicao button {

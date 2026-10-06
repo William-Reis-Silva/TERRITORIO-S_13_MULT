@@ -178,5 +178,9 @@ tr:hover {
   font-weight: 600;
 }
 
+.sg-vezes { text-align: center; }
+.sg-vezes-zero { color: #bbb; }
+.sg-vezes--repetido { background: #fff3e0; color: #e65100; }
+
 .sg-concluido { background: #e8f5e9; color: #2e7d32; }
 .sg-andamento { background: #e3f2fd; color: #1565c0; }

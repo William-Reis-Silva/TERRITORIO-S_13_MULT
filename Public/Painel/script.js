@@ -340,6 +340,15 @@ document.getElementById("gerenciar-form")?.addEventListener("submit", async (e) 
   }
 });
 
+// criadoEm pode vir como Timestamp do Firestore ou, em registros antigos
+// migrados, como texto/número — sem isso o .toDate() quebra o relatório inteiro.
+function criadoEmMs(designacao) {
+  const v = designacao.criadoEm;
+  if (!v) return 0;
+  const ms = typeof v.toDate === "function" ? v.toDate().getTime() : new Date(v).getTime();
+  return Number.isNaN(ms) ? 0 : ms;
+}
+
 // Função para calcular status do território baseado nas designações
 function calcularStatusTerritorio(mapa, designacoes) {
   const designacoesDoMapa = designacoes.filter((d) => d.mapa === mapa);
@@ -350,7 +359,7 @@ function calcularStatusTerritorio(mapa, designacoes) {
 
   // Buscar a designação mais recente
   const designacaoRecente = designacoesDoMapa.sort(
-    (a, b) => (b.criadoEm?.toDate() || 0) - (a.criadoEm?.toDate() || 0)
+    (a, b) => criadoEmMs(b) - criadoEmMs(a)
   )[0];
 
   return designacaoRecente.status || "disponível";
@@ -425,7 +434,7 @@ function gerarTabelaDesignacoes(designacoesData) {
   `;
 
   designacoesData
-    .sort((a, b) => (b.criadoEm?.toDate() || 0) - (a.criadoEm?.toDate() || 0))
+    .sort((a, b) => criadoEmMs(b) - criadoEmMs(a))
     .slice(0, 15)
     .forEach((designacao) => {
       const dataConclusao = designacao.dataConclusao || "-";

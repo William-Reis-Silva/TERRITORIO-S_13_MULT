@@ -1,4 +1,4 @@
-const CACHE_NAME = "arranjo-campo-v1.5.4";
+const CACHE_NAME = "arranjo-campo-v1.5.7";
 
 const FILES_TO_CACHE = [
   "./index.html",
@@ -71,7 +71,10 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log("[SW] Cacheando arquivos");
-      return cache.addAll(FILES_TO_CACHE);
+      // cache: "reload" ignora o cache HTTP do navegador (o Hosting deixa JS
+      // em cache por até 1h) — sem isso a versão nova do SW pode pré-cachear
+      // os arquivos antigos e continuar servindo-os.
+      return cache.addAll(FILES_TO_CACHE.map((url) => new Request(url, { cache: "reload" })));
     })
   );
   self.skipWaiting();

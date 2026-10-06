@@ -223,6 +223,8 @@ button:hover {
     color: #1E2733;
     font-weight: bold;
     background-color: white;
+    /* ícone do calendário legível mesmo com o sistema em modo escuro */
+    color-scheme: light;
 
 }
 /* Container para os botões do modal */
