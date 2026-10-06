@@ -739,6 +739,7 @@ class UnifiedDataManager {
       const overrideDoc = await this._col('sequencia-config')
         .doc(grupo)
         .get();
+      const ordemMapas = overrideDoc.exists ? overrideDoc.data().ordemMapas : null;
 
       if (overrideDoc.exists) {
         const { proximoMapaOverride } = overrideDoc.data();
@@ -759,35 +760,25 @@ class UnifiedDataManager {
 
       const historico = await this.getDesignacoesPorGrupo(grupo);
 
-      // Se o grupo tem bairros ou mapas travados, a sugestão só considera esses territórios
-      const bairrosDoGrupo = this.gruposBairros.get(grupo)?.bairros || [];
-      const mapasDoGrupo = this.gruposBairros.get(grupo)?.mapas || [];
-      const universo = Array.from(this.territorios.values());
-      const territoriosDoGrupo = (bairrosDoGrupo.length > 0 || mapasDoGrupo.length > 0)
-        ? universo.filter(t => bairrosDoGrupo.includes(t.bairro) || mapasDoGrupo.includes(t.mapa))
-        : universo;
+      // Grupo com bairros/mapas travados → só esses; sem trava (ex: Congregação) → só os livres
+      const territoriosDoGrupo = window.SequenciaUtils.territoriosDoGrupo(
+        Array.from(this.territorios.values()), grupo, Object.fromEntries(this.gruposBairros)
+      );
 
-      const todosTerritorios = territoriosDoGrupo.sort((a, b) => a.mapa - b.mapa);
+      // Ordem personalizada do admin (painel → Sequência); sem ela, ordem numérica
+      const todosTerritorios = window.SequenciaUtils.ordenarTerritoriosDoGrupo(territoriosDoGrupo, ordemMapas);
 
       if (todosTerritorios.length === 0) return null;
 
       if (historico.length === 0) {
-        const primeiro = todosTerritorios.find(t => t.status !== 'em andamento');
+        const primeiro = window.SequenciaUtils.proximoNaSequencia(todosTerritorios, null);
         return primeiro
           ? { mapa: primeiro.mapa, bairro: primeiro.bairro || '', historicoRecente: [], ultimoMapa: null }
           : null;
       }
 
       const ultimoMapa = historico[historico.length - 1].mapa;
-      const numerosTerritorios = todosTerritorios.map(t => t.mapa);
-      const indexUltimo = numerosTerritorios.indexOf(ultimoMapa);
-
-      // Reordena a lista ciclicamente para começar logo após o último mapa usado
-      const candidatos = indexUltimo === -1
-        ? todosTerritorios
-        : [...todosTerritorios.slice(indexUltimo + 1), ...todosTerritorios.slice(0, indexUltimo + 1)];
-
-      const proximo = candidatos.find(t => t.status !== 'em andamento');
+      const proximo = window.SequenciaUtils.proximoNaSequencia(todosTerritorios, ultimoMapa);
       if (!proximo) return null;
 
       const historicoRecente = historico.slice(-5).map(h => ({

@@ -31,15 +31,31 @@
     return _territorios;
   }
 
-  async function buscarUltimaDesignacaoGrupo(grupo) {
+  // Histórico completo do grupo, do mais antigo ao mais recente: o último
+  // item é a última designação; os concluídos alimentam a marca na lista.
+  async function buscarDesignacoesGrupo(grupo) {
     const congId = await Tenant.resolverCongId();
     const snap = await Tenant.collectionSync(congId, 'designacoes')
       .where('designadoPara', '==', grupo)
-      .orderBy('dataInicio', 'desc')
-      .limit(1)
+      .orderBy('dataInicio', 'asc')
       .get();
-    if (snap.empty) return null;
-    return snap.docs[0].data();
+    return snap.docs.map(d => d.data());
+  }
+
+  // mapa → data (AAAA-MM-DD) da conclusão mais recente pelo grupo
+  function ultimasConclusoes(designacoes) {
+    const porMapa = new Map();
+    for (const d of designacoes) {
+      if (!d.dataConclusao) continue;
+      // normalmente "AAAA-MM-DD"; registros antigos podem trazer Timestamp
+      const data = typeof d.dataConclusao === 'string'
+        ? d.dataConclusao
+        : (typeof d.dataConclusao.toDate === 'function' ? d.dataConclusao.toDate().toISOString().slice(0, 10) : null);
+      if (!data) continue;
+      const atual = porMapa.get(d.mapa);
+      if (!atual || data > atual) porMapa.set(d.mapa, data);
+    }
+    return porMapa;
   }
 
   async function buscarOverride(grupo) {
@@ -48,27 +64,19 @@
     return doc.exists ? doc.data() : null;
   }
 
-  async function buscarBairrosDoGrupo(grupo) {
+  async function buscarReserva(grupo) {
     const congId = await Tenant.resolverCongId();
     const doc = await Tenant.collectionSync(congId, 'grupo-bairros').doc(grupo).get();
-    return doc.exists ? (doc.data().bairros || []) : [];
+    const dados = doc.exists ? doc.data() : {};
+    return { bairros: dados.bairros || [], mapas: dados.mapas || [] };
   }
 
-  async function buscarMapasDoGrupo(grupo) {
-    const congId = await Tenant.resolverCongId();
-    const doc = await Tenant.collectionSync(congId, 'grupo-bairros').doc(grupo).get();
-    return doc.exists ? (doc.data().mapas || []) : [];
-  }
+  // Estado da lista de mapas de cada grupo (para reordenar antes de salvar).
+  // grupo → { ordem: [territorio...], alterada: bool, aberta: bool, ultimoMapa, proximoMapa }
+  const _listas = {};
 
-  function calcularProxAutomatic(ultimoMapa, territorios) {
-    if (!ultimoMapa) {
-      return territorios.find(t => t.status !== 'em andamento') || null;
-    }
-    const idx = territorios.findIndex(t => t.mapa === ultimoMapa);
-    const candidatos = idx === -1
-      ? territorios
-      : [...territorios.slice(idx + 1), ...territorios.slice(0, idx + 1)];
-    return candidatos.find(t => t.status !== 'em andamento') || null;
+  function chaveGrupo(grupo) {
+    return grupo.replace(/\s/g, '_');
   }
 
   // ── Renderização ─────────────────────────────────────────
@@ -122,8 +130,112 @@
             </div>
           </div>
         </div>
+
+        <div class="sa-lista" id="sa-lista-${chaveGrupo(grupo)}">${renderListaMapas(grupo)}</div>
       </div>`;
   }
+
+  function escHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function renderListaMapas(grupo) {
+    const estado = _listas[grupo];
+    if (!estado) return '';
+    const { ordem, alterada, personalizada, aberta, ultimoMapa, proximoMapa, conclusoes } = estado;
+
+    const titulo = `
+      <button class="sa-lista-toggle" onclick="toggleListaMapas('${grupo}')">
+        ${aberta ? '▾' : '▸'} Mapas do grupo (${ordem.length})
+        <span class="sa-lista-modo">${personalizada || alterada ? 'ordem personalizada' : 'ordem numérica'}</span>
+      </button>`;
+    if (!aberta) return titulo;
+
+    if (!ordem.length) return titulo + '<div class="sa-lista-vazia">Nenhum mapa neste grupo.</div>';
+
+    const linhas = ordem.map((t, i) => {
+      const marcas = [
+        t.mapa === ultimoMapa ? '<span class="sa-tag sa-tag-ultimo">último</span>' : '',
+        t.mapa === proximoMapa ? '<span class="sa-tag sa-tag-proximo">próximo</span>' : '',
+        t.status === 'em andamento' ? '<span class="sa-tag sa-tag-andamento">em andamento</span>' : '',
+        conclusoes.has(t.mapa) ? `<span class="sa-tag sa-tag-concluido" title="Última conclusão por este grupo">✓ concluído ${formatarData(conclusoes.get(t.mapa))}</span>` : ''
+      ].join('');
+      return `
+        <li class="sa-lista-item${t.mapa === proximoMapa ? ' sa-lista-item--proximo' : ''}">
+          <span class="sa-lista-pos">${i + 1}º</span>
+          <span class="sa-lista-mapa">Mapa ${t.mapa}</span>
+          <span class="sa-lista-bairro">${escHtml(t.bairro || '—')}</span>
+          <span class="sa-lista-tags">${marcas}</span>
+          <span class="sa-lista-mover">
+            <button class="sa-btn-mover" aria-label="Subir mapa ${t.mapa}" onclick="moverMapaSequencia('${grupo}', ${i}, -1)" ${i === 0 ? 'disabled' : ''}>↑</button>
+            <button class="sa-btn-mover" aria-label="Descer mapa ${t.mapa}" onclick="moverMapaSequencia('${grupo}', ${i}, 1)" ${i === ordem.length - 1 ? 'disabled' : ''}>↓</button>
+          </span>
+        </li>`;
+    }).join('');
+
+    return `${titulo}
+      <ol class="sa-lista-itens">${linhas}</ol>
+      <div class="sa-lista-acoes">
+        ${alterada ? '<span class="sa-lista-aviso">Ordem alterada — não salva</span>' : ''}
+        <button class="sa-btn sa-btn-save" onclick="salvarOrdemSequencia('${grupo}')" ${alterada ? '' : 'disabled'}>Salvar ordem</button>
+        ${alterada ? `<button class="sa-btn sa-btn-clear" onclick="carregarPainelSequencia()">Descartar</button>` : ''}
+        ${personalizada && !alterada ? `<button class="sa-btn sa-btn-clear" onclick="restaurarOrdemNumerica('${grupo}')">Voltar à ordem numérica</button>` : ''}
+      </div>`;
+  }
+
+  function atualizarLista(grupo) {
+    const el = document.getElementById(`sa-lista-${chaveGrupo(grupo)}`);
+    if (el) el.innerHTML = renderListaMapas(grupo);
+  }
+
+  async function gravarOrdem(grupo, ordemMapas) {
+    const congId = await Tenant.resolverCongId();
+    await Tenant.collectionSync(congId, 'sequencia-config')
+      .doc(grupo)
+      .set({
+        ordemMapas,
+        atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+  }
+
+  window.toggleListaMapas = function (grupo) {
+    const estado = _listas[grupo];
+    if (!estado) return;
+    estado.aberta = !estado.aberta;
+    atualizarLista(grupo);
+  };
+
+  window.moverMapaSequencia = function (grupo, i, direcao) {
+    const estado = _listas[grupo];
+    const j = i + direcao;
+    if (!estado || j < 0 || j >= estado.ordem.length) return;
+    [estado.ordem[i], estado.ordem[j]] = [estado.ordem[j], estado.ordem[i]];
+    estado.alterada = true;
+    atualizarLista(grupo);
+  };
+
+  window.salvarOrdemSequencia = async function (grupo) {
+    const estado = _listas[grupo];
+    if (!estado) return;
+    try {
+      await gravarOrdem(grupo, estado.ordem.map(t => t.mapa));
+      _territorios = [];
+      await carregarPainelSequencia();
+    } catch (err) {
+      alert('Erro ao salvar ordem: ' + err.message);
+    }
+  };
+
+  window.restaurarOrdemNumerica = async function (grupo) {
+    if (!confirm(`Voltar a sequência do ${grupo} para a ordem numérica dos mapas?`)) return;
+    try {
+      await gravarOrdem(grupo, firebase.firestore.FieldValue.delete());
+      _territorios = [];
+      await carregarPainelSequencia();
+    } catch (err) {
+      alert('Erro ao restaurar ordem: ' + err.message);
+    }
+  };
 
   async function carregarPainelSequencia() {
     const container = document.getElementById('seq-admin-container');
@@ -139,18 +251,31 @@
         buscarGruposSequenciaveis()
       ]);
 
+      // Reservas de todos os grupos: um grupo sem reserva (ex: Congregação)
+      // só enxerga os mapas que nenhum outro grupo reservou.
+      const reservasLista = await Promise.all(grupos.map(buscarReserva));
+      const reservas = Object.fromEntries(grupos.map((g, i) => [g, reservasLista[i]]));
+
       const resultados = await Promise.all(grupos.map(async grupo => {
-        const [ultima, override, bairrosDoGrupo, mapasDoGrupo] = await Promise.all([
-          buscarUltimaDesignacaoGrupo(grupo),
-          buscarOverride(grupo),
-          buscarBairrosDoGrupo(grupo),
-          buscarMapasDoGrupo(grupo)
+        const [designacoes, override] = await Promise.all([
+          buscarDesignacoesGrupo(grupo),
+          buscarOverride(grupo)
         ]);
+        const ultima = designacoes.length ? designacoes[designacoes.length - 1] : null;
         const ultimoMapa = ultima ? ultima.mapa : null;
-        const territoriosDoGrupo = (bairrosDoGrupo.length > 0 || mapasDoGrupo.length > 0)
-          ? territorios.filter(t => bairrosDoGrupo.includes(t.bairro) || mapasDoGrupo.includes(t.mapa))
-          : territorios;
-        const proximoAuto = calcularProxAutomatic(ultimoMapa, territoriosDoGrupo);
+        const territoriosDoGrupo = SequenciaUtils.territoriosDoGrupo(territorios, grupo, reservas);
+        const ordenados = SequenciaUtils.ordenarTerritoriosDoGrupo(territoriosDoGrupo, override?.ordemMapas);
+        const proximoAuto = SequenciaUtils.proximoNaSequencia(ordenados, ultimoMapa);
+
+        _listas[grupo] = {
+          ordem: ordenados,
+          alterada: false,
+          personalizada: Array.isArray(override?.ordemMapas) && override.ordemMapas.length > 0,
+          aberta: _listas[grupo]?.aberta || false,
+          ultimoMapa,
+          conclusoes: ultimasConclusoes(designacoes),
+          proximoMapa: override?.proximoMapaOverride || (proximoAuto ? proximoAuto.mapa : null)
+        };
         return { grupo, ultima, override, proximoAuto };
       }));
 
@@ -339,6 +464,93 @@
 
     .sa-btn-save  { background: #253875; color: #fff; }
     .sa-btn-clear { background: #e0e0e0; color: #555; }
+    .sa-btn:disabled { opacity: 0.4; cursor: default; }
+
+    .sa-lista { border-top: 1px solid #f0f0f0; }
+
+    .sa-lista-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: none;
+      border: none;
+      font-size: 13px;
+      font-weight: 700;
+      color: #1e2733;
+      cursor: pointer;
+      text-align: left;
+    }
+    .sa-lista-toggle:hover { background: #fafafa; }
+
+    .sa-lista-modo {
+      margin-left: auto;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: #888;
+    }
+
+    .sa-lista-vazia { padding: 0 16px 12px; color: #999; font-style: italic; font-size: 13px; }
+
+    .sa-lista-itens {
+      list-style: none;
+      margin: 0;
+      padding: 0 16px;
+      max-height: 420px;
+      overflow-y: auto;
+    }
+
+    .sa-lista-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 4px;
+      border-bottom: 1px solid #f3f3f3;
+      font-size: 13px;
+    }
+    .sa-lista-item--proximo { background: #f1f8e9; }
+
+    .sa-lista-pos    { width: 32px; color: #999; font-variant-numeric: tabular-nums; }
+    .sa-lista-mapa   { width: 70px; font-weight: 700; color: #1e2733; }
+    .sa-lista-bairro { flex: 1; color: #555; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sa-lista-tags   { display: flex; gap: 4px; flex-wrap: wrap; }
+
+    .sa-tag {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 999px;
+    }
+    .sa-tag-ultimo    { background: #eceff1; color: #455a64; }
+    .sa-tag-proximo   { background: #e8f5e9; color: #2e7d32; }
+    .sa-tag-andamento { background: #e3f2fd; color: #1565c0; }
+    .sa-tag-concluido { background: #f1f8e9; color: #33691e; border: 1px solid #c5e1a5; }
+
+    .sa-lista-mover { display: flex; gap: 4px; }
+    .sa-btn-mover {
+      width: 28px;
+      height: 28px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .sa-btn-mover:disabled { opacity: 0.3; cursor: default; }
+
+    .sa-lista-acoes {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 10px 16px 14px;
+    }
+    .sa-lista-aviso { font-size: 12px; color: #e65100; font-weight: 700; margin-right: auto; }
+
+    @media (max-width: 480px) {
+      .sa-lista-bairro { display: none; }
+    }
   `;
   document.head.appendChild(style);
 })();

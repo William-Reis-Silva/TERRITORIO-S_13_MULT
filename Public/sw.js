@@ -1,4 +1,4 @@
-const CACHE_NAME = "arranjo-campo-v1.5.7";
+const CACHE_NAME = "arranjo-campo-v1.5.9";
 
 const FILES_TO_CACHE = [
   "./index.html",
@@ -36,6 +36,7 @@ const FILES_TO_CACHE = [
   "./js/S_13.js",
   "./js/UnifiedDataManager.js",
   "./js/CongregacaoUtils.js",
+  "./js/SequenciaUtils.js",
   "./js/Tenant.js",
   "./js/script.js",
   "./js/sequencias.js",
